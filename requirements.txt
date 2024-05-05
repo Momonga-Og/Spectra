@@ -1,0 +1,9 @@
+# Create or edit requirements.txt
+echo "discord.py" >> requirements.txt
+echo "gtts" >> requirements.txt
+echo "pynacl" >> requirements.txt
+
+# Add, commit, and push to GitHub
+git add requirements.txt
+git commit -m "Add requirements.txt"
+git push
