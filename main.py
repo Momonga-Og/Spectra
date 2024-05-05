@@ -51,7 +51,7 @@ async def on_voice_state_update(member, before, after):
             await vc.disconnect()  # Disconnect from the voice channel
 
         # Clean up the audio file after use
-        os.remove(audio_file)
+        # os.remove(audio_file)
 
 # Start the Discord bot
 client.run(DISCORD_BOT_TOKEN)
