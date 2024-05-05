@@ -12,7 +12,7 @@ intents.voice_states = True  # Enable voice channel events
 client = discord.Client(intents=intents)
 
 # Your Discord bot token
-DISCORD_BOT_TOKEN = 'YOUR_DISCORD_BOT_TOKEN'  # Replace with your token
+DISCORD_BOT_TOKEN = 'MTIxNjI2NjI2MTk1MzEyMjQyNQ.GB5B8Q.Z-4I4Suu4DgR1i4ODobwvk2QF6MvBlZe1pLM78'  # Replace with your token
 
 
 # Function to convert text to speech
