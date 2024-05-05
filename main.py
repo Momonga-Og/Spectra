@@ -27,17 +27,21 @@ async def on_ready():
 # Event: when a member joins a voice channel
 @client.event
 async def on_voice_state_update(member, before, after):
-    # Only execute when the user joins a new channel
+    # Ensure the bot isn't already connected before joining a voice channel
     if before.channel is None and after.channel is not None:
-        # The user joined a voice channel
+        # Check if the bot is already connected to a voice channel
+        if not client.voice_clients:
+            vc = await after.channel.connect()  # Join the voice channel
+        else:
+            vc = client.voice_clients[0]  # Use the existing voice client
+
+        # Play the audio file
         audio_file = f'{member.name}_welcome.mp3'
         welcome_text = f'Welcome to the voice channel, {member.name}!'
         text_to_speech(welcome_text, audio_file)
 
-        # Join the voice channel and play the audio
-        vc = await after.channel.connect()  # Join the voice channel
         vc.play(discord.FFmpegPCMAudio(audio_file))  # Play the audio
-
+        
         # Wait until the audio is finished
         while vc.is_playing():
             await asyncio.sleep(1)  # Wait until the audio is done
