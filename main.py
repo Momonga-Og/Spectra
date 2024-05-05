@@ -11,8 +11,12 @@ intents.voice_states = True  # Enable voice channel events
 # Create Discord client with these intents
 client = discord.Client(intents=intents)
 
-# Your Discord bot token
-DISCORD_BOT_TOKEN = 'DISCORD_BOT_TOKEN'  # Replace with your token
+# Retrieve the bot token from an environment variable
+DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")  # Get the bot token securely
+
+client = discord.Client()
+
+client.run(DISCORD_BOT_TOKEN)
 
 
 # Function to convert text to speech
