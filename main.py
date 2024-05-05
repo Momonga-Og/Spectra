@@ -1,20 +1,20 @@
 import discord
 from gtts import gTTS
 import os
-import asyncio  # Ensure asyncio is imported
+import asyncio  
 
-# Retrieve the bot token from an environment variable
-DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")  # Get the bot token securely
 
-# Set up Intents
+DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")  
+
+
 intents = discord.Intents.default()
-intents.members = True  # Enable server member events
-intents.voice_states = True  # Enable voice channel events
+intents.members = True  
+intents.voice_states = True  
 
-# Create Discord client with these intents
+
 client = discord.Client(intents=intents)
 
-# Function to convert text to speech
+
 def text_to_speech(text, filename):
     tts = gTTS(text)
     tts.save(filename)
