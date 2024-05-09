@@ -51,16 +51,16 @@ async def on_voice_state_update(member, before, after):
         # Clean up the audio file after use
         os.remove(audio_file)
 
-# Command: /help to list other commands
-@bot.command()
-async def help(ctx):
-    help_text = """
+# Change the command name to avoid conflicts
+@bot.command(name="commands")
+async def show_commands(ctx):
+    commands_text = """
     Available commands:
-/help - Show this help message
+/commands - Show this list of commands
 /stop - Stop the bot's current operation
 /work - Resume the bot's automatic functions
     """
-    await ctx.send(help_text)
+    await ctx.send(commands_text)
 
 # Command: /stop to stop the bot's operations
 is_stopped = False
