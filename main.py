@@ -13,6 +13,9 @@ intents.voice_states = True
 # Create a bot with a command prefix
 bot = commands.Bot(command_prefix='/', intents=intents)
 
+# Global variable to track the stopped state
+is_stopped = False
+
 # Function to create TTS audio
 def text_to_speech(text, filename):
     tts = gTTS(text)
@@ -23,17 +26,41 @@ def text_to_speech(text, filename):
 async def on_ready():
     print(f'Logged in as {bot.user}')
 
-# Command: Display list of available commands
+# Event: when a member joins a voice channel
+@bot.event
+async def on_voice_state_update(member, before, after):
+    # If the bot is stopped, do nothing
+    if is_stopped:
+        return
+
+    if before.channel is None and after.channel is not None:
+        # If the bot isn't already in a voice channel
+        if not bot.voice_clients:
+            vc = await after.channel.connect()
+        else:
+            vc = bot.voice_clients[0]
+
+        # Play the welcome message
+        audio_file = f'{member.name}_welcome.mp3'
+        welcome_text = f'Welcome to the voice channel, {member.name}!'
+        text_to_speech(welcome_text, audio_file)
+
+        vc.play(discord.FFmpegPCMAudio(audio_file))
+
+        # Wait until the audio is finished
+        while vc.is_playing():
+            await asyncio.sleep(1)
+
+        # Disconnect after playing
+        if vc.is_connected():
+            await vc.disconnect()
+
+        # Clean up the audio file after use
+        os.remove(audio_file)
+
+# Command: /commands to show available commands
 @bot.command(name="commands")
 async def show_commands(ctx):
-    # Determine if the context is a DM or a text channel
-    if ctx.guild is None:
-        # It's a DM
-        await ctx.send("You're in a DM. Here are the commands:")
-    else:
-        # It's a text channel
-        await ctx.send("You're in a text channel. Here are the commands:")
-
     commands_text = """
     Available commands:
 /commands - Show this list of commands
@@ -43,8 +70,6 @@ async def show_commands(ctx):
     await ctx.send(commands_text)
 
 # Command: /stop to stop the bot's operations
-is_stopped = False
-
 @bot.command()
 async def stop(ctx):
     global is_stopped
