@@ -29,18 +29,19 @@ async def on_ready():
 # Event: when a member joins a voice channel
 @bot.event
 async def on_voice_state_update(member, before, after):
-    # If the bot is stopped, do nothing
+    # If the bot is stopped, exit early to avoid further action
     if is_stopped:
         return
 
+    # If a member joins a voice channel
     if before.channel is None and after.channel is not None:
-        # If the bot isn't already in a voice channel
+        # Connect to the voice channel if not already connected
         if not bot.voice_clients:
             vc = await after.channel.connect()
         else:
             vc = bot.voice_clients[0]
 
-        # Play the welcome message
+        # Play a welcome message
         audio_file = f'{member.name}_welcome.mp3'
         welcome_text = f'Welcome to the voice channel, {member.name}!'
         text_to_speech(welcome_text, audio_file)
@@ -58,17 +59,6 @@ async def on_voice_state_update(member, before, after):
         # Clean up the audio file after use
         os.remove(audio_file)
 
-# Command: /commands to show available commands
-@bot.command(name="commands")
-async def show_commands(ctx):
-    commands_text = """
-    Available commands:
-/commands - Show this list of commands
-/stop - Stop the bot's current operation
-/work - Resume the bot's automatic functions
-    """
-    await ctx.send(commands_text)
-
 # Command: /stop to stop the bot's operations
 @bot.command()
 async def stop(ctx):
@@ -85,6 +75,17 @@ async def work(ctx):
         await ctx.send("Bot operations resumed.")
     else:
         await ctx.send("Bot is already running.")
+
+# Command: /commands to show available commands
+@bot.command(name="commands")
+async def show_commands(ctx):
+    commands_text = """
+    Available commands:
+/commands - Show this list of commands
+/stop - Stop the bot's current operation
+/work - Resume the bot's automatic functions
+    """
+    await ctx.send(commands_text)
 
 # Start the bot
 bot.run(DISCORD_BOT_TOKEN)
