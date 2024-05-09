@@ -37,7 +37,7 @@ async def on_voice_state_update(member, before, after):
 
         # Play the audio file
         audio_file = f'{member.name}_welcome.mp3'
-        welcome_text = f'Welcome to the voice channel, {member.display_name}!'
+        welcome_text = f'Welcome to the voice channel, {member.name}!'
         text_to_speech(welcome_text, audio_file)
 
         vc.play(discord.FFmpegPCMAudio(audio_file))  # Play the audio
