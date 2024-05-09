@@ -1,57 +1,85 @@
 import discord
+from discord.ext import commands
 from gtts import gTTS
 import os
-import asyncio  
+import asyncio
 
-
-DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")  
-
+DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 intents = discord.Intents.default()
-intents.members = True  
-intents.voice_states = True  
+intents.members = True
+intents.voice_states = True
 
+# Create a bot with a command prefix
+bot = commands.Bot(command_prefix='/', intents=intents)
 
-client = discord.Client(intents=intents)
-
-
+# Function to create TTS audio
 def text_to_speech(text, filename):
     tts = gTTS(text)
     tts.save(filename)
 
 # Event: when the bot is ready
-@client.event
+@bot.event
 async def on_ready():
-    print(f'Logged in as {client.user}')
+    print(f'Logged in as {bot.user}')
 
 # Event: when a member joins a voice channel
-@client.event
+@bot.event
 async def on_voice_state_update(member, before, after):
-    # Ensure the bot isn't already connected before joining a voice channel
     if before.channel is None and after.channel is not None:
-        # Check if the bot is already connected to a voice channel
-        if not client.voice_clients:
-            vc = await after.channel.connect()  # Join the voice channel
+        # If the bot isn't already in a voice channel
+        if not bot.voice_clients:
+            vc = await after.channel.connect()
         else:
-            vc = client.voice_clients[0]  # Use the existing voice client
+            vc = bot.voice_clients[0]
 
-        # Play the audio file
+        # Play the welcome message
         audio_file = f'{member.name}_welcome.mp3'
         welcome_text = f'Welcome to the voice channel, {member.name}!'
         text_to_speech(welcome_text, audio_file)
 
-        vc.play(discord.FFmpegPCMAudio(audio_file))  # Play the audio
-        
+        vc.play(discord.FFmpegPCMAudio(audio_file))
+
         # Wait until the audio is finished
         while vc.is_playing():
-            await asyncio.sleep(1)  # Wait until the audio is done
+            await asyncio.sleep(1)
 
         # Disconnect after playing
         if vc.is_connected():
-            await vc.disconnect()  # Disconnect from the voice channel
+            await vc.disconnect()
 
         # Clean up the audio file after use
-        # os.remove(audio_file)
+        os.remove(audio_file)
 
-# Start the Discord bot
-client.run(DISCORD_BOT_TOKEN)
+# Command: /help to list other commands
+@bot.command()
+async def help(ctx):
+    help_text = """
+    Available commands:
+/help - Show this help message
+/stop - Stop the bot's current operation
+/work - Resume the bot's automatic functions
+    """
+    await ctx.send(help_text)
+
+# Command: /stop to stop the bot's operations
+is_stopped = False
+
+@bot.command()
+async def stop(ctx):
+    global is_stopped
+    is_stopped = True
+    await ctx.send("Bot operations stopped.")
+
+# Command: /work to resume automatic functions (works if stopped)
+@bot.command()
+async def work(ctx):
+    global is_stopped
+    if is_stopped:
+        is_stopped = False
+        await ctx.send("Bot operations resumed.")
+    else:
+        await ctx.send("Bot is already running.")
+
+# Start the bot
+bot.run(DISCORD_BOT_TOKEN)
