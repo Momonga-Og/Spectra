@@ -7,7 +7,6 @@ from discord.ext import commands
 from discord import app_commands
   
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")  # Add this to get weather info
 
 intents = discord.Intents.default()
 intents.members = True  
@@ -71,28 +70,7 @@ async def time_command(interaction: discord.Interaction, location: str):
     except Exception as e:
         await interaction.response.send_message(f"An error occurred: {e}", ephemeral=True)
 
-# Command to get the weather for a specified location
-@tree.command(name='weather', description='Get the weather for a specified city or country')
-@app_commands.describe(location='City or country to get the weather for')
-async def weather_command(interaction: discord.Interaction, location: str):
-    try:
-        response = requests.get(
-            f"http://api.openweathermap.org/data/2.5/weather?q={location}&appid={OPENWEATHER_API_KEY}&units=metric"
-        )
-        response.raise_for_status()  # Check for HTTP errors
-        weather_data = response.json()
 
-        city = weather_data['name']
-        weather_desc = weather_data['weather'][0]['description']
-        temperature = weather_data['main']['temp']
-
-        await interaction.response.send_message(
-            f"Weather in {city}: {weather_desc}, {temperature}°C"
-        )
-    except requests.exceptions.HTTPError:
-        await interaction.response.send_message("Could not find the specified location. Please check the spelling or try another location.", ephemeral=True)
-    except Exception as e:
-        await interaction.response.send_message(f"An error occurred: {e}", ephemeral=True)
 
 # Event: when the bot is ready
 @bot.event
