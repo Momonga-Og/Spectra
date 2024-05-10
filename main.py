@@ -86,28 +86,29 @@ async def on_ready():
 @bot.event
 async def on_voice_state_update(member, before, after):
     if before.channel is None and after.channel is not None:
-        # Join the voice channel if the bot is not connected
         if not bot.voice_clients:
             vc = await after.channel.connect()
         else:
             vc = bot.voice_clients[0]
 
-        # Prepare and play audio
-        audio_file = f'{member.name}_welcome.mp3'
-        welcome_text = f'Welcome to the voice channel, {member.name}!'
-        text_to_speech(welcome_text, audio_file)
+        if vc.is_connected():  # Ensure the voice client is connected
+            # Prepare and play audio
+            audio_file = f'{member.name}_welcome.mp3'
+            welcome_text = f'Welcome to the voice channel, {member.name}!'
+            
+            text_to_speech(welcome_text, audio_file)
 
-        vc.play(discord.FFmpegPCMAudio(audio_file))  # Play the audio
-        
-        while vc.is_playing():
-            await asyncio.sleep(1)  # Wait until the audio is finished
+            vc.play(discord.FFmpegPCMAudio(audio_file))  # Play the audio
+            
+            while vc.is_playing():
+                await asyncio.sleep(1)  # Wait until the audio is finished
 
-        # Disconnect after playing
-        if vc.is_connected():
-            await vc.disconnect()
+            # Disconnect after playing
+            await vc.disconnect()  # Safe to disconnect if the voice client is connected
 
-        # Clean up the audio file after use
-        os.remove(audio_file)
+            # Clean up the audio file after use
+            os.remove(audio_file)
+
 
 # Start the bot
 bot.run(DISCORD_BOT_TOKEN)
