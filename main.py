@@ -1,16 +1,18 @@
 import discord
-from gtts import gTTS
 import os
-import asyncio  
+import requests
+import asyncio
+from gtts import gTTS
 from discord.ext import commands
 from discord import app_commands
   
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")  # Add this to get weather info
 
 intents = discord.Intents.default()
 intents.members = True  
 intents.voice_states = True  
-intents.message_content = True  # Add this to avoid warnings
+intents.message_content = True  # To handle message-related commands
 
 # Create the bot instance with desired intents
 bot = commands.Bot(command_prefix='!', intents=intents)
@@ -25,13 +27,12 @@ async def hello_command(interaction: discord.Interaction):
 @tree.command(name='pm_all', description='Send a private message to all users in the server')
 @app_commands.describe(message='The message to send')
 async def pm_all(interaction: discord.Interaction, message: str):
-    # Check permissions
     if not interaction.user.guild_permissions.administrator:
         await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
         return
 
-    # Acknowledge the command to avoid timeout
-    await interaction.response.defer(ephemeral=True)  # Defers response but keeps interaction active
+    # Defer response to prevent interaction timeout
+    await interaction.response.defer(ephemeral=True)
 
     sent_count = 0
     failed_count = 0
@@ -42,7 +43,7 @@ async def pm_all(interaction: discord.Interaction, message: str):
             continue
 
         try:
-            await member.send(message)  # Send a private message
+            await member.send(message)
             sent_count += 1
         except Exception:
             failed_count += 1
@@ -52,16 +53,53 @@ async def pm_all(interaction: discord.Interaction, message: str):
         f"Sent messages to {sent_count} users. Failed to send to {failed_count} users."
     )
 
-def text_to_speech(text, filename):
-    tts = gTTS(text)
-    tts.save(filename)
+# Command to get the current time in a specified city or country
+@tree.command(name='time', description='Get the current time in a specified city or country')
+@app_commands.describe(location='City or country to get the time for')
+async def time_command(interaction: discord.Interaction, location: str):
+    try:
+        response = requests.get(f"http://worldtimeapi.org/api/timezone/{location}")
+        response.raise_for_status()  # Check for errors in response
+        time_data = response.json()
+
+        current_time = time_data['datetime']
+        timezone = time_data['timezone']
+
+        await interaction.response.send_message(f"Current time in {timezone}: {current_time}")
+    except requests.exceptions.HTTPError:
+        await interaction.response.send_message("Could not find the specified location. Please check the spelling or try another location.", ephemeral=True)
+    except Exception as e:
+        await interaction.response.send_message(f"An error occurred: {e}", ephemeral=True)
+
+# Command to get the weather for a specified location
+@tree.command(name='weather', description='Get the weather for a specified city or country')
+@app_commands.describe(location='City or country to get the weather for')
+async def weather_command(interaction: discord.Interaction, location: str):
+    try:
+        response = requests.get(
+            f"http://api.openweathermap.org/data/2.5/weather?q={location}&appid={OPENWEATHER_API_KEY}&units=metric"
+        )
+        response.raise_for_status()  # Check for HTTP errors
+        weather_data = response.json()
+
+        city = weather_data['name']
+        weather_desc = weather_data['weather'][0]['description']
+        temperature = weather_data['main']['temp']
+
+        await interaction.response.send_message(
+            f"Weather in {city}: {weather_desc}, {temperature}°C"
+        )
+    except requests.exceptions.HTTPError:
+        await interaction.response.send_message("Could not find the specified location. Please check the spelling or try another location.", ephemeral=True)
+    except Exception as e:
+        await interaction.response.send_message(f"An error occurred: {e}", ephemeral=True)
 
 # Event: when the bot is ready
 @bot.event
 async def on_ready():
-    # Sync the command tree with Discord
+    # Sync command tree with Discord
     try:
-        await tree.sync()  # Sync globally or specify a guild
+        await tree.sync()  # Sync globally or for specific guild
         print(f'Logged in as {bot.user}')
     except Exception as e:
         print(f"Error during command sync: {e}")
