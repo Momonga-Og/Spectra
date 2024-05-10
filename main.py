@@ -25,30 +25,32 @@ async def hello_command(interaction: discord.Interaction):
 @tree.command(name='pm_all', description='Send a private message to all users in the server')
 @app_commands.describe(message='The message to send')
 async def pm_all(interaction: discord.Interaction, message: str):
-    # Only allow users with Administrator permissions to use this command
+    # Check permissions
     if not interaction.user.guild_permissions.administrator:
         await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
         return
 
-    guild = interaction.guild
-    if guild is None:
-        await interaction.response.send_message("This command can only be used in a guild.", ephemeral=True)
-        return
+    # Acknowledge the command to avoid timeout
+    await interaction.response.defer(ephemeral=True)  # Defers response but keeps interaction active
 
     sent_count = 0
     failed_count = 0
+    guild = interaction.guild
+
     for member in guild.members:
         if member.bot or member == interaction.user:
             continue
-        
+
         try:
             await member.send(message)  # Send a private message
             sent_count += 1
         except Exception:
-            failed_count += 1  # Handle errors if sending fails
+            failed_count += 1
 
-    response_message = f"Sent messages to {sent_count} users. Failed to send to {failed_count} users."
-    await interaction.response.send_message(response_message, ephemeral=True)
+    # Send the final message indicating the results
+    await interaction.followup.send(
+        f"Sent messages to {sent_count} users. Failed to send to {failed_count} users."
+    )
 
 def text_to_speech(text, filename):
     tts = gTTS(text)
