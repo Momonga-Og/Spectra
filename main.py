@@ -10,16 +10,45 @@ DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 intents = discord.Intents.default()
 intents.members = True  
 intents.voice_states = True  
+intents.message_content = True  # Add this to avoid warnings
 
 # Create the bot instance with desired intents
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 # Use the existing command tree from the bot
-tree = bot.tree  # No need to create a new CommandTree
+tree = bot.tree
 
 @tree.command(name='hello', description='Replies with Hello!')
 async def hello_command(interaction: discord.Interaction):
     await interaction.response.send_message('Hello!')
+
+@tree.command(name='pm_all', description='Send a private message to all users in the server')
+@app_commands.describe(message='The message to send')
+async def pm_all(interaction: discord.Interaction, message: str):
+    # Only allow users with Administrator permissions to use this command
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
+        return
+
+    guild = interaction.guild
+    if guild is None:
+        await interaction.response.send_message("This command can only be used in a guild.", ephemeral=True)
+        return
+
+    sent_count = 0
+    failed_count = 0
+    for member in guild.members:
+        if member.bot or member == interaction.user:
+            continue
+        
+        try:
+            await member.send(message)  # Send a private message
+            sent_count += 1
+        except Exception:
+            failed_count += 1  # Handle errors if sending fails
+
+    response_message = f"Sent messages to {sent_count} users. Failed to send to {failed_count} users."
+    await interaction.response.send_message(response_message, ephemeral=True)
 
 def text_to_speech(text, filename):
     tts = gTTS(text)
@@ -29,18 +58,21 @@ def text_to_speech(text, filename):
 @bot.event
 async def on_ready():
     # Sync the command tree with Discord
-    await tree.sync()  # Sync globally or specify a guild
-    print(f'Logged in as {bot.user}')
+    try:
+        await tree.sync()  # Sync globally or specify a guild
+        print(f'Logged in as {bot.user}')
+    except Exception as e:
+        print(f"Error during command sync: {e}")
 
 # Event: when a member joins a voice channel
 @bot.event
 async def on_voice_state_update(member, before, after):
     if before.channel is None and after.channel is not None:
-        # Check if the bot is already connected to a voice channel
+        # Join the voice channel if the bot is not connected
         if not bot.voice_clients:
-            vc = await after.channel.connect()  # Join the voice channel
+            vc = await after.channel.connect()
         else:
-            vc = bot.voice_clients[0]  # Use the existing voice client
+            vc = bot.voice_clients[0]
 
         # Prepare and play audio
         audio_file = f'{member.name}_welcome.mp3'
@@ -49,9 +81,8 @@ async def on_voice_state_update(member, before, after):
 
         vc.play(discord.FFmpegPCMAudio(audio_file))  # Play the audio
         
-        # Wait until the audio is finished
         while vc.is_playing():
-            await asyncio.sleep(1)
+            await asyncio.sleep(1)  # Wait until the audio is finished
 
         # Disconnect after playing
         if vc.is_connected():
