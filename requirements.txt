@@ -1,4 +1,3 @@
 discord.py  # The main Discord library
 gtts  # Google Text-to-Speech
 pynacl  # Required for Discord voice functionalities
-requests
