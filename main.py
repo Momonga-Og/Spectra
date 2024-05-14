@@ -2,56 +2,51 @@ import discord
 from gtts import gTTS
 import os
 import asyncio  
+import logging
 
-  
-DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")  
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
+DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 intents = discord.Intents.default()
 intents.members = True  
 intents.voice_states = True  
 
-
 client = discord.Client(intents=intents)
-
 
 def text_to_speech(text, filename):
     tts = gTTS(text)
     tts.save(filename)
 
-# Event: when the bot is ready
 @client.event
 async def on_ready():
     print(f'Logged in as {client.user}')
 
-# Event: when a member joins a voice channel
 @client.event
 async def on_voice_state_update(member, before, after):
-    # Ensure the bot isn't already connected before joining a voice channel
     if before.channel is None and after.channel is not None:
-        # Check if the bot is already connected to a voice channel
-        if not client.voice_clients:
-            vc = await after.channel.connect()  # Join the voice channel
-        else:
-            vc = client.voice_clients[0]  # Use the existing voice client
+        try:
+            if not client.voice_clients:
+                vc = await after.channel.connect()
+            else:
+                vc = client.voice_clients[0]
+            
+            audio_file = f'{member.name}_welcome.mp3'
+            welcome_text = f'Welcome to the voice channel, {member.name}!'
+            text_to_speech(welcome_text, audio_file)
+            
+            vc.play(discord.FFmpegPCMAudio(audio_file))
 
-        # Play the audio file
-        audio_file = f'{member.name}_welcome.mp3'
-        welcome_text = f'Welcome to the voice channel, {member.name}!'
-        text_to_speech(welcome_text, audio_file)
+            while vc.is_playing():
+                await asyncio.sleep(1)
 
-        vc.play(discord.FFmpegPCMAudio(audio_file))  # Play the audio
-        
-        # Wait until the audio is finished
-        while vc.is_playing():
-            await asyncio.sleep(1)  # Wait until the audio is done
+            if vc.is_connected():
+                await vc.disconnect()
 
-        # Disconnect after playing
-        if vc.is_connected():
-            await vc.disconnect()  # Disconnect from the voice channel
+            # Clean up the audio file after use
+            # os.remove(audio_file)
+        except Exception as e:
+            logging.error(f"Error in on_voice_state_update: {e}")
 
-        # Clean up the audio file after use
-        # os.remove(audio_file)
-
-# Start the Discord bot
 client.run(DISCORD_BOT_TOKEN)
