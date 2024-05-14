@@ -168,7 +168,7 @@ async def pick_s(interaction: discord.Interaction, role: discord.Role):
     selected_member = random.choice(members)
     await interaction.response.send_message(f"Picked user: {selected_member.name} from role {role.name}", ephemeral=True)
 
-# /c.name command
+# /cname command
 @bot.tree.command(name="cname", description="Change a user's nickname")
 @app_commands.checks.has_permissions(manage_nicknames=True)
 async def c_name(interaction: discord.Interaction, user: discord.Member, *, new_nickname: str):
@@ -180,8 +180,8 @@ async def c_name_error(interaction: discord.Interaction, error: app_commands.App
     if isinstance(error, app_commands.errors.MissingPermissions):
         await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
 
-# /m.help command
-@bot.tree.command(name="m.help", description="Show the bot's commands and their descriptions")
+# /mhelp command
+@bot.tree.command(name="mhelp", description="Show the bot's commands and their descriptions")
 async def m_help(interaction: discord.Interaction):
     embed = discord.Embed(title="Bot Commands", color=discord.Color.green())
     commands_list = [
@@ -196,7 +196,7 @@ async def m_help(interaction: discord.Interaction):
         ("/pick", "Pick a random user from the server"),
         ("/pick-s [role]", "Pick a random user from a specific role"),
         ("/cname [user] [new_nickname]", "Change a user's nickname (Admin/Mod only)"),
-        ("/m.help", "Show this help message")
+        ("/mhelp", "Show this help message")
     ]
     
     for name, desc in commands_list:
