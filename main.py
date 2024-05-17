@@ -15,6 +15,7 @@ intents.message_content = True
 
 # Initialize bot with commands.Bot
 bot = commands.Bot(command_prefix="!", intents=intents)
+blocked_users = []
 
 def text_to_speech(text, filename):
     tts = gTTS(text)
@@ -55,6 +56,44 @@ async def on_voice_state_update(member, before, after):
                 os.remove(audio_file)
         except Exception as e:
             print(f"Error in on_voice_state_update: {e}")
+@bot.event
+async def on_voice_state_update(member, before, after):
+    if before.channel is None and after.channel is not None:
+        try:
+            if not member.bot and member.id not in blocked_users:
+                if not bot.voice_clients:
+                    vc = await after.channel.connect()
+                else:
+                    vc = bot.voice_clients[0]
+
+                audio_file = f'{member.name}_welcome.mp3'
+                welcome_text = f'Welcome to the voice channel, {member.name}!'
+                text_to_speech(welcome_text, audio_file)
+
+                vc.play(discord.FFmpegPCMAudio(audio_file))
+
+                while vc.is_playing():
+                    await asyncio.sleep(1)
+
+                if vc.is_connected():
+                    await vc.disconnect()
+
+                # Clean up the audio file after use
+                os.remove(audio_file)
+        except Exception as e:
+            print(f"Error in on_voice_state_update: {e}")
+# /block command
+@bot.tree.command(name="block", description="Block the bot from greeting you")
+async def block(interaction: discord.Interaction, user: discord.Member):
+    # You may want to add some permission checks here to restrict who can use this command
+    # For example, only allow administrators to block users
+    
+    # Add the user to the blocked list
+    # You need to have a mechanism to store blocked users, such as a database or file
+    # For simplicity, I'll assume you have a list called 'blocked_users'
+    blocked_users.append(user.id)
+    await interaction.response.send_message(f"The bot will no longer greet {user.name}", ephemeral=True)
+
 
 # /pm command
 @bot.tree.command(name="pm", description="Send a message to a specific user (Admin only)")
