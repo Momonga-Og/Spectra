@@ -57,23 +57,27 @@ async def on_voice_state_update(member, before, after):
             print(f"Error in on_voice_state_update: {e}")
 
 # /pm command
-@bot.tree.command(name="pm", description="Send a message to a specific user")
+@bot.tree.command(name="pm", description="Send a message to a specific user (Admin only)")
+@app_commands.checks.has_permissions(administrator=True)
 async def pm(interaction: discord.Interaction, user: discord.Member, *, message: str):
-    await user.send(message)
+    author = interaction.user.name
+    await user.send(f"Message from {author}: {message}")
     await interaction.response.send_message(f"Message sent to {user.name}", ephemeral=True)
 
 # /pm-role command
-@bot.tree.command(name="pm-role", description="Send a message to all users in a specific role")
+@bot.tree.command(name="pm-role", description="Send a message to all users in a specific role (Admin only)")
+@app_commands.checks.has_permissions(administrator=True)
 async def pm_role(interaction: discord.Interaction, role: discord.Role, *, message: str):
+    author = interaction.user.name
     for member in role.members:
         try:
-            await member.send(message)
+            await member.send(f"Message from {author}: {message}")
         except discord.Forbidden:
             pass  # Skip users who have DMs disabled
     await interaction.response.send_message(f"Message sent to all members with the role {role.name}", ephemeral=True)
 
 # /pm-all command
-@bot.tree.command(name="pm-all", description="Send a message to all users in the server")
+@bot.tree.command(name="pm-all", description="Send a message to all users in the server (Admin only)")
 @app_commands.checks.has_permissions(administrator=True)
 async def pm_all(interaction: discord.Interaction, *, message: str):
     guild = interaction.guild
@@ -90,6 +94,9 @@ async def pm_all(interaction: discord.Interaction, *, message: str):
 async def pm_all_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.errors.MissingPermissions):
         await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
+
+# Remaining commands and error handlers remain the same as before...
+
 
 # /kick command
 @bot.tree.command(name="kick", description="Kick a specific user from the server")
