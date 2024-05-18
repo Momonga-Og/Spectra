@@ -89,26 +89,7 @@ async def pm_role(interaction: discord.Interaction, role: discord.Role, *, messa
             pass  # Skip users who have DMs disabled
     await interaction.response.send_message(f"Message sent to all members with the role {role.name}", ephemeral=True)
 
-# /pm-all command
-@bot.tree.command(name="pm-all", description="Send a message to all users in the server (Admin only)")
-@app_commands.checks.has_permissions(administrator=True)
-async def pm_all(interaction: discord.Interaction, *, message: str):
-    guild = interaction.guild
-    for member in guild.members:
-        if not member.bot:  # Skip bots
-            try:
-                await member.send(message)
-            except discord.Forbidden:
-                pass  # Skip users who have DMs disabled
-    await interaction.response.send_message("Message sent to all users in the server", ephemeral=True)
 
-# Error handler for /pm-all
-@pm_all.error
-async def pm_all_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
-    if isinstance(error, app_commands.errors.MissingPermissions):
-        await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
-
-# Remaining commands and error handlers remain the same as before...
 
 
 # /kick command
@@ -207,13 +188,15 @@ async def m_help(interaction: discord.Interaction):
     commands_list = [
         ("/pm [user] [message]", "Send a message to a specific user"),
         ("/pm-role [role] [message]", "Send a message to all users in a specific role"),
-        ("/pm-all [message]", "Send a message to all users in the server (Admin only)"),
         ("/kick [user] [reason]", "Kick a specific user from the server (Admin/Mod only)"),
         ("/ban [user] [reason]", "Ban a specific user from the server (Admin/Mod only)"),
         ("/mute [user]", "Mute a specific user in the server (Admin/Mod only)"),
         ("/deafen [user]", "Deafen a specific user in the server (Admin/Mod only)"),
         ("/poll [question] [option1] [option2]", "Create a poll in the server"),
         ("/pick", "Pick a random user from the server"),
+        ("/unblock", "to undo the block "),
+
+        ("/block", "to block the bot from greeting you "),
         ("/pick-s [role]", "Pick a random user from a specific role"),
         ("/cname [user] [new_nickname]", "Change a user's nickname (Admin/Mod only)"),
         ("/mhelp", "Show this help message")
