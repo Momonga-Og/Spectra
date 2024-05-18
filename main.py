@@ -77,17 +77,7 @@ async def pm(interaction: discord.Interaction, user: discord.Member, *, message:
     await interaction.response.send_message(f"Message sent to {user.name}", ephemeral=True)
 
 
-# /pm-role command
-@bot.tree.command(name="pm-role", description="Send a message to all users in a specific role (Admin only)")
-@app_commands.checks.has_permissions(administrator=True)
-async def pm_role(interaction: discord.Interaction, role: discord.Role, *, message: str):
-    author = interaction.user.name
-    for member in role.members:
-        try:
-            await member.send(f"Message from {author}: {message}")
-        except discord.Forbidden:
-            pass  # Skip users who have DMs disabled
-    await interaction.response.send_message(f"Message sent to all members with the role {role.name}", ephemeral=True)
+
 
 
 
@@ -187,7 +177,6 @@ async def m_help(interaction: discord.Interaction):
     embed = discord.Embed(title="Bot Commands", color=discord.Color.green())
     commands_list = [
         ("/pm [user] [message]", "Send a message to a specific user"),
-        ("/pm-role [role] [message]", "Send a message to all users in a specific role"),
         ("/kick [user] [reason]", "Kick a specific user from the server (Admin/Mod only)"),
         ("/ban [user] [reason]", "Ban a specific user from the server (Admin/Mod only)"),
         ("/mute [user]", "Mute a specific user in the server (Admin/Mod only)"),
