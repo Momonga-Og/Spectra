@@ -66,6 +66,7 @@ async def on_voice_state_update(member, before, after):
                 print(f"Error in on_voice_state_update: {e}")
 
 @bot.tree.command(name="block-user", description="Block the bot from greeting a user")
+@app_commands.checks.has_permissions(administrator=True)
 async def block_user(interaction: discord.Interaction, user: discord.Member):
     guild_id = interaction.guild.id
     if guild_id not in blocked_users:
@@ -73,7 +74,13 @@ async def block_user(interaction: discord.Interaction, user: discord.Member):
     blocked_users[guild_id].add(user.id)
     await interaction.response.send_message(f"{user.name} will no longer be greeted by the bot.", ephemeral=True)
 
+@block_user.error
+async def block_user_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.errors.MissingPermissions):
+        await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
+
 @bot.tree.command(name="unblock-user", description="Unblock the bot from greeting a user")
+@app_commands.checks.has_permissions(administrator=True)
 async def unblock_user(interaction: discord.Interaction, user: discord.Member):
     guild_id = interaction.guild.id
     if guild_id in blocked_users and user.id in blocked_users[guild_id]:
@@ -82,12 +89,22 @@ async def unblock_user(interaction: discord.Interaction, user: discord.Member):
     else:
         await interaction.response.send_message(f"{user.name} was not blocked.", ephemeral=True)
 
+@unblock_user.error
+async def unblock_user_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.errors.MissingPermissions):
+        await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
+
 @bot.tree.command(name="pm", description="Send a message to a specific user (Admin only)")
 @app_commands.checks.has_permissions(administrator=True)
 async def pm(interaction: discord.Interaction, user: discord.Member, *, message: str):
     author = interaction.user.name
     await user.send(f"Message from {author}: {message}")
     await interaction.response.send_message(f"Message sent to {user.name}", ephemeral=True)
+
+@pm.error
+async def pm_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.errors.MissingPermissions):
+        await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
 
 # /kick command
 @bot.tree.command(name="kick", description="Kick a specific user from the server")
@@ -191,8 +208,8 @@ async def m_help(interaction: discord.Interaction):
         ("/poll [question] [option1] [option2]", "Create a poll in the server"),
         ("/pick", "Pick a random user from the server"),
         ("/pick-s [role]", "Pick a random user from a specific role"),
-        ("/block-user [user]", "Block the bot from greeting a user"),
-        ("/unblock-user [user]", "Unblock the bot from greeting a user"),
+        ("/block-user [user]", "Block the bot from greeting a user (Admin only)"),
+        ("/unblock-user [user]", "Unblock the bot from greeting a user (Admin only)"),
         ("/cname [user] [new_nickname]", "Change a user's nickname (Admin/Mod only)"),
         ("/mhelp", "Show this help message"),
         ("/addme", "Invite the bot owner to all servers and grant admin role")
