@@ -194,7 +194,7 @@ async def m_help(interaction: discord.Interaction):
         ("/cname [user] [new_nickname]", "Change a user's nickname (Admin/Mod only)"),
         ("/mhelp", "Show this help message")
     ]
-    
+      
     for name, desc in commands_list:
         embed.add_field(name=name, value=desc, inline=False)
     
