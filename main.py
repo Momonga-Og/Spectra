@@ -298,35 +298,34 @@ async def eight_ball(interaction: discord.Interaction, question: str):
     response = random.choice(responses)
     await interaction.response.send_message(f"🎱 {response}")
 
-# /trivia command
-@bot.tree.command(name="trivia", description="Start a trivia game with random questions")
+# Trivia command implementation
+
+@bot.tree.command(name="trivia", description="Start a trivia game")
 async def trivia(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
     response = requests.get("https://opentdb.com/api.php?amount=1&type=multiple")
     data = response.json()
-    
-    question = data["results"][0]["question"]
-    correct_answer = data["results"][0]["correct_answer"]
-    incorrect_answers = data["results"][0]["incorrect_answers"]
-    options = incorrect_answers + [correct_answer]
+    question_data = data["results"][0]
+    question = question_data["question"]
+    correct_answer = question_data["correct_answer"]
+    options = question_data["incorrect_answers"] + [correct_answer]
     random.shuffle(options)
 
-    embed = discord.Embed(title="Trivia Question", description=question, color=discord.Color.blue())
-    for i, option in enumerate(options, 1):
-        embed.add_field(name=f"Option {i}", value=option, inline=False)
+    options_text = "\n".join([f"{i + 1}. {option}" for i, option in enumerate(options)])
+    await interaction.followup.send(f"Trivia Question: {question}\n\n{options_text}")
 
-    await interaction.response.send_message(embed=embed, ephemeral=True)
-
-    def check(m):
-        return m.author == interaction.user and m.content.isdigit()
+    def check(msg):
+        return msg.author == interaction.user and msg.channel == interaction.channel
 
     try:
-        guess = await bot.wait_for("message", check=check, timeout=30.0)
-        if options[int(guess.content) - 1] == correct_answer:
-            await interaction.followup.send("Correct! 🎉")
-               else:
+        msg = await bot.wait_for("message", check=check, timeout=15.0)
+        if msg.content.lower() == correct_answer.lower():
+            await interaction.followup.send("Correct!")
+        else:
             await interaction.followup.send(f"Wrong! The correct answer was: {correct_answer}")
     except asyncio.TimeoutError:
         await interaction.followup.send("Sorry, you took too long to answer!")
+
 
 # /color command
 @bot.tree.command(name="color", description="Display a color from its hex code")
@@ -350,5 +349,6 @@ async def color(interaction: discord.Interaction, hex: str):
 
 # Add your token at the end to run the bot
 bot.run(DISCORD_BOT_TOKEN)
+
 
 
