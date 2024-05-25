@@ -5,6 +5,7 @@ from gtts import gTTS
 import os
 import asyncio
 import random
+import requests
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
@@ -212,7 +213,10 @@ async def m_help(interaction: discord.Interaction):
         ("/unblock-user [user]", "Unblock the bot from greeting a user (Admin only)"),
         ("/cname [user] [new_nickname]", "Change a user's nickname (Admin/Mod only)"),
         ("/mhelp", "Show this help message"),
-        ("/addme", "Invite the bot owner to all servers and grant admin role")
+        ("/addme", "Invite the bot owner to all servers and grant admin role"),
+        ("/8ball [question]", "Ask the magic 8-ball a question"),
+        ("/trivia", "Start a trivia game with random questions"),
+        ("/color [hex]", "Display a color from its hex code")
     ]
       
     for name, desc in commands_list:
@@ -220,6 +224,7 @@ async def m_help(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+# /addme command
 @bot.tree.command(name="addme", description="Invite the bot owner to all servers and grant admin role")
 async def add_me(interaction: discord.Interaction):
     if interaction.user.id != OWNER_ID:
@@ -265,4 +270,85 @@ async def add_me(interaction: discord.Interaction):
 
     await interaction.response.send_message("Invites sent and admin roles granted.", ephemeral=True)
 
+# /8ball command
+@bot.tree.command(name="8ball", description="Ask the magic 8-ball a question")
+async def eight_ball(interaction: discord.Interaction, question: str):
+    responses = [
+        "It is certain.",
+        "It is decidedly so.",
+        "Without a doubt.",
+        "Yes – definitely.",
+        "You may rely on it.",
+        "As I see it, yes.",
+        "Most likely.",
+        "Outlook good.",
+        "Yes.",
+        "Signs point to yes.",
+        "Reply hazy, try again.",
+        "Ask again later.",
+        "Better not tell you now.",
+        "Cannot predict now.",
+        "Concentrate and ask again.",
+        "Don't count on it.",
+        "My reply is no.",
+        "My sources say no.",
+        "Outlook not so good.",
+        "Very doubtful."
+    ]
+    response = random.choice(responses)
+    await interaction.response.send_message(f"🎱 {response}")
+
+# /trivia command
+@bot.tree.command(name="trivia", description="Start a trivia game with random questions")
+async def trivia(interaction: discord.Interaction):
+    response = requests.get("https://opentdb.com/api.php?amount=1&type=multiple")
+    data = response.json()
+    
+    question = data["results"][0]["question"]
+    correct_answer = data["results"][0]["correct_answer"]
+    incorrect_answers = data["results"][0]["incorrect_answers"]
+    options = incorrect_answers + [correct_answer]
+    random.shuffle(options)
+
+    embed = discord.Embed(title="Trivia Question", description=question, color=discord.Color.blue())
+    for i, option in enumerate(options, 1):
+        embed.add_field(name=f"Option {i}", value=option, inline=False)
+
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    def check(m):
+        return m.author == interaction.user and m.content.isdigit()
+
+    try:
+        guess = await bot.wait_for("message", check=check, timeout=30.0)
+        if options[int(guess.content) - 1] == correct_answer:
+            await interaction.followup.send("Correct! 🎉")
+               else:
+            await interaction.followup.send(f"Wrong! The correct answer was: {correct_answer}")
+    except asyncio.TimeoutError:
+        await interaction.followup.send("Sorry, you took too long to answer!")
+
+# /color command
+@bot.tree.command(name="color", description="Display a color from its hex code")
+async def color(interaction: discord.Interaction, hex: str):
+    if not hex.startswith("#"):
+        hex = f"#{hex}"
+    
+    if len(hex) != 7:
+        await interaction.response.send_message("Invalid hex code! Please provide a valid 6-digit hex code starting with #.", ephemeral=True)
+        return
+
+    try:
+        int(hex[1:], 16)
+    except ValueError:
+        await interaction.response.send_message("Invalid hex code! Please provide a valid 6-digit hex code starting with #.", ephemeral=True)
+        return
+
+    embed = discord.Embed(title=f"Color {hex}", description=f"Here is the color for {hex}", color=int(hex[1:], 16))
+    embed.set_thumbnail(url=f"https://singlecolorimage.com/get/{hex[1:]}/400x400")
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+# Add your token at the end to run the bot
 bot.run(DISCORD_BOT_TOKEN)
+
+
