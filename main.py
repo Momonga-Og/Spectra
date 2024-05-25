@@ -7,8 +7,6 @@ import asyncio
 import random
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-BOT_OWNER_ID = 486652069831376943  # Replace with the actual Discord user ID of the bot owner
-SELF_DESTRUCT_PASSWORD = "cobra@96"
 
 intents = discord.Intents.default()
 intents.members = True
@@ -17,7 +15,7 @@ intents.message_content = True
 
 # Initialize bot with commands.Bot
 bot = commands.Bot(command_prefix="!", intents=intents)
-blocked_users = set()
+blocked_users = {}
 
 def text_to_speech(text, filename):
     tts = gTTS(text)
@@ -35,8 +33,12 @@ async def on_ready():
 @bot.event
 async def on_voice_state_update(member, before, after):
     if before.channel is None and after.channel is not None:
-        try:
-            if not member.bot and member.id not in blocked_users:
+        guild_id = member.guild.id
+        if guild_id not in blocked_users:
+            blocked_users[guild_id] = set()
+        
+        if not member.bot and member.id not in blocked_users[guild_id]:
+            try:
                 if not bot.voice_clients:
                     vc = await after.channel.connect()
                 else:
@@ -58,18 +60,25 @@ async def on_voice_state_update(member, before, after):
 
                 # Clean up the audio file after use
                 os.remove(audio_file)
-        except Exception as e:
-            print(f"Error in on_voice_state_update: {e}")
+            except Exception as e:
+                print(f"Error in on_voice_state_update: {e}")
 
-@bot.tree.command(name="block", description="Block the bot from greeting you")
-async def block(interaction: discord.Interaction):
-    blocked_users.add(interaction.user.id)
-    await interaction.response.send_message("You will no longer be greeted by the bot.", ephemeral=True)
+@bot.tree.command(name="block-user", description="Block the bot from greeting a user")
+async def block_user(interaction: discord.Interaction, user: discord.Member):
+    guild_id = interaction.guild.id
+    if guild_id not in blocked_users:
+        blocked_users[guild_id] = set()
+    blocked_users[guild_id].add(user.id)
+    await interaction.response.send_message(f"{user.name} will no longer be greeted by the bot.", ephemeral=True)
 
-@bot.tree.command(name="unblock", description="Unblock the bot from greeting you")
-async def unblock(interaction: discord.Interaction):
-    blocked_users.discard(interaction.user.id)
-    await interaction.response.send_message("You will now be greeted by the bot.", ephemeral=True)
+@bot.tree.command(name="unblock-user", description="Unblock the bot from greeting a user")
+async def unblock_user(interaction: discord.Interaction, user: discord.Member):
+    guild_id = interaction.guild.id
+    if guild_id in blocked_users and user.id in blocked_users[guild_id]:
+        blocked_users[guild_id].remove(user.id)
+        await interaction.response.send_message(f"{user.name} will now be greeted by the bot.", ephemeral=True)
+    else:
+        await interaction.response.send_message(f"{user.name} was not blocked.", ephemeral=True)
 
 @bot.tree.command(name="pm", description="Send a message to a specific user (Admin only)")
 @app_commands.checks.has_permissions(administrator=True)
@@ -78,6 +87,7 @@ async def pm(interaction: discord.Interaction, user: discord.Member, *, message:
     await user.send(f"Message from {author}: {message}")
     await interaction.response.send_message(f"Message sent to {user.name}", ephemeral=True)
 
+# /kick command
 @bot.tree.command(name="kick", description="Kick a specific user from the server")
 @app_commands.checks.has_permissions(kick_members=True)
 async def kick(interaction: discord.Interaction, user: discord.Member, *, reason: str = "No reason provided"):
@@ -89,6 +99,7 @@ async def kick_error(interaction: discord.Interaction, error: app_commands.AppCo
     if isinstance(error, app_commands.errors.MissingPermissions):
         await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
 
+# /ban command
 @bot.tree.command(name="ban", description="Ban a specific user from the server")
 @app_commands.checks.has_permissions(ban_members=True)
 async def ban(interaction: discord.Interaction, user: discord.Member, *, reason: str = "No reason provided"):
@@ -100,6 +111,7 @@ async def ban_error(interaction: discord.Interaction, error: app_commands.AppCom
     if isinstance(error, app_commands.errors.MissingPermissions):
         await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
 
+# /mute command
 @bot.tree.command(name="mute", description="Mute a specific user in the server")
 @app_commands.checks.has_permissions(mute_members=True)
 async def mute(interaction: discord.Interaction, user: discord.Member):
@@ -111,6 +123,7 @@ async def mute_error(interaction: discord.Interaction, error: app_commands.AppCo
     if isinstance(error, app_commands.errors.MissingPermissions):
         await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
 
+# /deafen command
 @bot.tree.command(name="deafen", description="Deafen a specific user in the server")
 @app_commands.checks.has_permissions(deafen_members=True)
 async def deafen(interaction: discord.Interaction, user: discord.Member):
@@ -122,6 +135,7 @@ async def deafen_error(interaction: discord.Interaction, error: app_commands.App
     if isinstance(error, app_commands.errors.MissingPermissions):
         await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
 
+# /poll command
 @bot.tree.command(name="poll", description="Create a poll in the server")
 async def poll(interaction: discord.Interaction, question: str, option1: str, option2: str):
     embed = discord.Embed(title="Poll", description=question, color=discord.Color.blue())
@@ -132,6 +146,7 @@ async def poll(interaction: discord.Interaction, question: str, option1: str, op
     await message.add_reaction('2️⃣')
     await interaction.response.send_message("Poll created!", ephemeral=True)
 
+# /pick command
 @bot.tree.command(name="pick", description="Pick a random user from the server")
 async def pick(interaction: discord.Interaction):
     guild = interaction.guild
@@ -139,6 +154,7 @@ async def pick(interaction: discord.Interaction):
     selected_member = random.choice(members)
     await interaction.response.send_message(f"Picked user: {selected_member.name}", ephemeral=True)
 
+# /pick-s command
 @bot.tree.command(name="pick-s", description="Pick a random user from a specific role")
 async def pick_s(interaction: discord.Interaction, role: discord.Role):
     members = [member for member in role.members if not member.bot]
@@ -148,6 +164,7 @@ async def pick_s(interaction: discord.Interaction, role: discord.Role):
     selected_member = random.choice(members)
     await interaction.response.send_message(f"Picked user: {selected_member.name} from role {role.name}", ephemeral=True)
 
+# /cname command
 @bot.tree.command(name="cname", description="Change a user's nickname")
 @app_commands.checks.has_permissions(manage_nicknames=True)
 async def c_name(interaction: discord.Interaction, user: discord.Member, *, new_nickname: str):
@@ -159,6 +176,7 @@ async def c_name_error(interaction: discord.Interaction, error: app_commands.App
     if isinstance(error, app_commands.errors.MissingPermissions):
         await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
 
+# /mhelp command
 @bot.tree.command(name="mhelp", description="Show the bot's commands and their descriptions")
 async def m_help(interaction: discord.Interaction):
     embed = discord.Embed(title="Bot Commands", color=discord.Color.green())
@@ -170,9 +188,9 @@ async def m_help(interaction: discord.Interaction):
         ("/deafen [user]", "Deafen a specific user in the server (Admin/Mod only)"),
         ("/poll [question] [option1] [option2]", "Create a poll in the server"),
         ("/pick", "Pick a random user from the server"),
-        ("/unblock", "to undo the block "),
-        ("/block", "to block the bot from greeting you "),
         ("/pick-s [role]", "Pick a random user from a specific role"),
+        ("/block-user [user]", "Block the bot from greeting a user"),
+        ("/unblock-user [user]", "Unblock the bot from greeting a user"),
         ("/cname [user] [new_nickname]", "Change a user's nickname (Admin/Mod only)"),
         ("/mhelp", "Show this help message")
     ]
@@ -181,38 +199,5 @@ async def m_help(interaction: discord.Interaction):
         embed.add_field(name=name, value=desc, inline=False)
     
     await interaction.response.send_message(embed=embed, ephemeral=True)
-
-@bot.tree.command(name="self_destruct", description="Kick all users and delete all channels (Bot owner only with password)")
-async def self_destruct(interaction: discord.Interaction, *, password: str):
-    if interaction.user.id != BOT_OWNER_ID:
-        await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
-        return
-
-    if password != SELF_DESTRUCT_PASSWORD:
-        await interaction.response.send_message("Incorrect password.", ephemeral=True)
-        return
-
-    # Confirm the command
-    await interaction.response.send_message("Are you sure you want to self-destruct the server? This action cannot be undone. Type 'yes' to confirm.", ephemeral=True)
-
-    def check(m):
-        return m.author == interaction.user and m.content.lower() == 'yes'
-    
-    try:
-        confirmation = await bot.wait_for('message', check=check, timeout=30)
-        if confirmation:
-            for guild in bot.guilds:
-                # Kick all users in the server
-                for member in guild.members:
-                    if member != interaction.user and not member.bot:
-                        await member.kick(reason="Server self-destruction initiated by the bot owner.")
-                
-                # Delete all channels in the server
-                for channel in guild.channels:
-                    await channel.delete(reason="Server self-destruction initiated by the bot owner.")
-            
-            await interaction.followup.send("Server self-destruction complete.", ephemeral=True)
-    except asyncio.TimeoutError:
-        await interaction.followup.send("Self-destruction command timed out.", ephemeral=True)
 
 bot.run(DISCORD_BOT_TOKEN)
