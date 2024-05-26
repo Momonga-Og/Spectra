@@ -66,8 +66,11 @@ async def on_voice_state_update(member, before, after):
 
                 # Clean up the audio file after use
                 os.remove(audio_file)
+            except AttributeError as e:
+                print(f"AttributeError in on_voice_state_update: {e}")
             except Exception as e:
                 print(f"Error in on_voice_state_update: {e}")
+
 
 @bot.tree.command(name="block-user", description="Block the bot from greeting a user")
 @app_commands.checks.has_permissions(administrator=True)
