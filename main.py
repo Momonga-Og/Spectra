@@ -72,6 +72,7 @@ async def on_voice_state_update(member, before, after):
                 print(f"Error in on_voice_state_update: {e}")
 
 
+
 @bot.tree.command(name="block-user", description="Block the bot from greeting a user")
 @app_commands.checks.has_permissions(administrator=True)
 async def block_user(interaction: discord.Interaction, user: discord.Member):
