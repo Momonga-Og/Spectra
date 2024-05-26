@@ -9,6 +9,7 @@ import requests
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
+BOT_OWNER_ID = 486652069831376943  # Replace this with your bot owner's ID
 OWNER_ID = 486652069831376943  # Your Discord user ID
 SELF_DESTRUCT_PASSWORD = "cobra@96"
 
