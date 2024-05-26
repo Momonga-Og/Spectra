@@ -6,13 +6,12 @@ import os
 import asyncio
 import random
 import requests
-from PIL import Image, ImageDraw, ImageFont
-import io
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-NEWS_API_KEY = os.getenv("NEWS_API_KEY")  # Add your NewsAPI key here
+
 
 OWNER_ID = 486652069831376943  # Your Discord user ID
+
 
 intents = discord.Intents.default()
 intents.members = True
@@ -66,12 +65,8 @@ async def on_voice_state_update(member, before, after):
 
                 # Clean up the audio file after use
                 os.remove(audio_file)
-            except AttributeError as e:
-                print(f"AttributeError in on_voice_state_update: {e}")
             except Exception as e:
                 print(f"Error in on_voice_state_update: {e}")
-
-
 
 @bot.tree.command(name="block-user", description="Block the bot from greeting a user")
 @app_commands.checks.has_permissions(administrator=True)
@@ -223,9 +218,7 @@ async def m_help(interaction: discord.Interaction):
         ("/addme", "Invite the bot owner to all servers and grant admin role"),
         ("/8ball [question]", "Ask the magic 8-ball a question"),
         ("/trivia", "Start a trivia game with random questions"),
-        ("/color [hex]", "Display a color from its hex code"),
-        ("/news [topic]", "Fetch and display the latest news headlines for a topic"),
-        ("/spin", "Spin a wheel and display the result")
+        ("/color [hex]", "Display a color from its hex code")
     ]
       
     for name, desc in commands_list:
@@ -335,6 +328,7 @@ async def trivia(interaction: discord.Interaction):
     except asyncio.TimeoutError:
         await interaction.followup.send("Sorry, you took too long to answer!")
 
+
 # /color command
 @bot.tree.command(name="color", description="Display a color from its hex code")
 async def color(interaction: discord.Interaction, hex: str):
@@ -355,61 +349,13 @@ async def color(interaction: discord.Interaction, hex: str):
     embed.set_thumbnail(url=f"https://singlecolorimage.com/get/{hex[1:]}/400x400")
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-# /news command
-@bot.tree.command(name="news", description="Fetch and display the latest news headlines for a topic")
-async def news(interaction: discord.Interaction, topic: str):
-    url = f"https://newsapi.org/v2/everything?q={topic}&apiKey={NEWS_API_KEY}"
-    response = requests.get(url)
-    data = response.json()
 
-    if data["status"] != "ok":
-        await interaction.response.send_message(f"Error fetching news: {data.get('message', 'Unknown error')}", ephemeral=True)
-        return
 
-    articles = data.get("articles", [])
-    if not articles:
-        await interaction.response.send_message(f"No news articles found for topic: {topic}", ephemeral=True)
-        return
 
-    embed = discord.Embed(title=f"Latest news for {topic}", color=discord.Color.blue())
-    for article in articles[:5]:  # Display up to 5 articles
-        title = article["title"]
-        description = article.get("description", "No description available.")
-        url = article["url"]
-        embed.add_field(name=title, value=f"{description}\n[Read more]({url})", inline=False)
 
-    await interaction.response.send_message(embed=embed, ephemeral=True)
-
-# /spin command
-@bot.tree.command(name="spin", description="Spin a wheel and display the result")
-async def spin(interaction: discord.Interaction):
-    colors = ["Red", "Green", "Blue", "Yellow", "Orange", "Purple", "Pink"]
-    selected_color = random.choice(colors)
-
-    # Create the wheel image
-    wheel = Image.new("RGB", (400, 400), (255, 255, 255))
-    draw = ImageDraw.Draw(wheel)
-
-    num_sections = len(colors)
-    angle = 360 / num_sections
-
-    for i, color in enumerate(colors):
-        start_angle = angle * i
-        end_angle = angle * (i + 1)
-        draw.pieslice([(0, 0), (400, 400)], start=start_angle, end=end_angle, fill=color)
-
-    # Draw the arrow
-    draw.polygon([(200, 10), (190, 30), (210, 30)], fill="black")
-
-    # Save the image to a BytesIO object
-    image_bytes = io.BytesIO()
-    wheel.save(image_bytes, format="PNG")
-    image_bytes.seek(0)
-
-    file = discord.File(fp=image_bytes, filename="wheel.png")
-    embed = discord.Embed(title="Spinning Wheel", description=f"The wheel landed on: {selected_color}", color=discord.Color.random())
-    embed.set_image(url="attachment://wheel.png")
-    await interaction.response.send_message(file=file, embed=embed, ephemeral=True)
 
 # Add your token at the end to run the bot
 bot.run(DISCORD_BOT_TOKEN)
+
+
+
