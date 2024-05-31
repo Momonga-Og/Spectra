@@ -12,6 +12,7 @@ DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 OWNER_ID = 486652069831376943  # Your Discord user ID
 SPECIAL_USER_ID = 486652069831376943  # The specific user ID
 SPECIAL_AUDIO_FILE = 'momonga.mp3'  # The audio file for the specific user
+TARGET_USER_ID = 1056141573580148776  # The user ID to kick if they delete any message
 
 intents = discord.Intents.default()
 intents.members = True
@@ -71,6 +72,15 @@ async def on_voice_state_update(member, before, after):
                     os.remove(audio_file)
             except Exception as e:
                 print(f"Error in on_voice_state_update: {e}")
+
+@bot.event
+async def on_message_delete(message):
+    if message.author.id == TARGET_USER_ID:
+        try:
+            await message.guild.kick(message.author, reason="Deleted a message")
+            print(f"Kicked {message.author} for deleting a message.")
+        except Exception as e:
+            print(f"Error kicking user: {e}")
 
 @bot.tree.command(name="block-user", description="Block the bot from greeting a user")
 @app_commands.checks.has_permissions(administrator=True)
@@ -342,7 +352,6 @@ async def trivia(interaction: discord.Interaction):
             await interaction.followup.send(f"Wrong! The correct answer was: {correct_answer}")
     except asyncio.TimeoutError:
         await interaction.followup.send("Sorry, you took too long to answer!")
-
 
 # /color command
 @bot.tree.command(name="color", description="Display a color from its hex code")
