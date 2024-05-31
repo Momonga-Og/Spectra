@@ -9,10 +9,9 @@ import requests
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
+
 OWNER_ID = 486652069831376943  # Your Discord user ID
-SPECIAL_USER_ID = 486652069831376943  # The specific user ID
-SPECIAL_AUDIO_FILE = 'momonga.mp3'  # The audio file for the specific user
-TARGET_USER_ID = 1056141573580148776  # The user ID to kick if they delete any message
+
 
 intents = discord.Intents.default()
 intents.members = True
@@ -52,12 +51,9 @@ async def on_voice_state_update(member, before, after):
                     if vc.channel != after.channel:
                         await vc.move_to(after.channel)
 
-                if member.id == SPECIAL_USER_ID:
-                    audio_file = SPECIAL_AUDIO_FILE
-                else:
-                    audio_file = f'{member.name}_welcome.mp3'
-                    welcome_text = f'Welcome to the voice channel, {member.name}!'
-                    text_to_speech(welcome_text, audio_file)
+                audio_file = f'{member.name}_welcome.mp3'
+                welcome_text = f'Welcome to the voice channel, {member.name}!'
+                text_to_speech(welcome_text, audio_file)
 
                 vc.play(discord.FFmpegPCMAudio(audio_file))
 
@@ -67,20 +63,10 @@ async def on_voice_state_update(member, before, after):
                 if vc.is_connected():
                     await vc.disconnect()
 
-                # Clean up the audio file after use, except for the special user's audio
-                if member.id != SPECIAL_USER_ID:
-                    os.remove(audio_file)
+                # Clean up the audio file after use
+                os.remove(audio_file)
             except Exception as e:
                 print(f"Error in on_voice_state_update: {e}")
-
-@bot.event
-async def on_message_delete(message):
-    if message.author.id == TARGET_USER_ID:
-        try:
-            await message.guild.kick(message.author, reason="Deleted a message")
-            print(f"Kicked {message.author} for deleting a message.")
-        except Exception as e:
-            print(f"Error kicking user: {e}")
 
 @bot.tree.command(name="block-user", description="Block the bot from greeting a user")
 @app_commands.checks.has_permissions(administrator=True)
@@ -353,6 +339,7 @@ async def trivia(interaction: discord.Interaction):
     except asyncio.TimeoutError:
         await interaction.followup.send("Sorry, you took too long to answer!")
 
+
 # /color command
 @bot.tree.command(name="color", description="Display a color from its hex code")
 async def color(interaction: discord.Interaction, hex: str):
@@ -373,5 +360,13 @@ async def color(interaction: discord.Interaction, hex: str):
     embed.set_thumbnail(url=f"https://singlecolorimage.com/get/{hex[1:]}/400x400")
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+
+
+
+
+
 # Add your token at the end to run the bot
 bot.run(DISCORD_BOT_TOKEN)
+
+
+
