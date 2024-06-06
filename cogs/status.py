@@ -5,12 +5,14 @@ from discord import app_commands
 class Status(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.tree = bot.tree
-        self.tree.add_command(app_commands.Command(
+
+    async def cog_load(self):
+        self.bot.tree.add_command(app_commands.Command(
             name="status",
             description="Check the bot's status",
             callback=self.status
         ))
+        await self.bot.tree.sync()
 
     async def status(self, interaction: discord.Interaction):
         try:
@@ -34,4 +36,6 @@ class Status(commands.Cog):
             await interaction.response.send_message(error_message)
 
 async def setup(bot):
-    await bot.add_cog(Status(bot))
+    cog = Status(bot)
+    await bot.add_cog(cog)
+    await cog.cog_load()
