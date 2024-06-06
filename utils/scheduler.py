@@ -6,7 +6,7 @@ async def reboot_bot(bot):
 def schedule_reboot(bot):
     async def reboot_task():
         while True:
-            await asyncio.sleep(3)  # 3 min
+            await asyncio.sleep(1800)  # 5 hours
             await reboot_bot(bot)
 
     bot.loop.create_task(reboot_task())
