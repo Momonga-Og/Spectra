@@ -27,5 +27,7 @@ class Admin(commands.Cog):
 async def setup(bot):
     cog = Admin(bot)
     await bot.add_cog(cog)
-    bot.tree.add_command(cog.block_user)
-    bot.tree.add_command(cog.unblock_user)
+    if not bot.tree.get_command('block_user'):
+        bot.tree.add_command(cog.block_user)
+    if not bot.tree.get_command('unblock_user'):
+        bot.tree.add_command(cog.unblock_user)
