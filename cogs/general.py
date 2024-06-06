@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 import random
 
 class General(commands.Cog):
@@ -15,8 +16,8 @@ class General(commands.Cog):
         except Exception as e:
             print(e)
 
-    @commands.command(name="8ball", description="Ask the magic 8-ball a question")
-    async def eight_ball(self, ctx, *, question: str):
+    @app_commands.command(name="8ball", description="Ask the magic 8-ball a question")
+    async def eight_ball(self, interaction: discord.Interaction, question: str):
         responses = [
             "It is certain.",
             "It is decidedly so.",
@@ -40,7 +41,9 @@ class General(commands.Cog):
             "Very doubtful."
         ]
         response = random.choice(responses)
-        await ctx.send(f"🎱 {response}")
+        await interaction.response.send_message(f"🎱 {response}")
 
 async def setup(bot):
-    await bot.add_cog(General(bot))
+    cog = General(bot)
+    await bot.add_cog(cog)
+    bot.tree.add_command(cog.eight_ball)
