@@ -24,10 +24,13 @@ class Admin(commands.Cog):
         else:
             await interaction.response.send_message(f"{user.name} was not blocked.")
 
+    @app_commands.command(name="addme", description="Add the bot to a server")
+    async def addme(self, interaction: discord.Interaction):
+        await interaction.response.send_message('Use this link to add me to your server: <invite_link>')
+
 async def setup(bot):
     cog = Admin(bot)
     await bot.add_cog(cog)
-    if not bot.tree.get_command('block_user'):
-        bot.tree.add_command(cog.block_user)
-    if not bot.tree.get_command('unblock_user'):
-        bot.tree.add_command(cog.unblock_user)
+    bot.tree.add_command(cog.block_user)
+    bot.tree.add_command(cog.unblock_user)
+    bot.tree.add_command(cog.addme)
