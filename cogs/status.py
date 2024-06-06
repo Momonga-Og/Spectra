@@ -1,12 +1,18 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 
 class Status(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.tree = bot.tree
+        self.tree.add_command(app_commands.Command(
+            name="status",
+            description="Check the bot's status",
+            callback=self.status
+        ))
 
-    @commands.slash_command(name="status", description="Check the bot's status")
-    async def status(self, ctx: discord.ApplicationContext):
+    async def status(self, interaction: discord.Interaction):
         try:
             # Check the bot's latency
             latency = self.bot.latency
@@ -18,14 +24,14 @@ class Status(commands.Cog):
                 f"Latency: {latency*1000:.2f} ms\n"
                 f"Connected to voice channel: {'Yes' if voice_connected else 'No'}"
             )
-            await ctx.respond(status_message)
+            await interaction.response.send_message(status_message)
         except Exception as e:
             error_message = (
                 f"There was an issue checking the bot's status. "
                 f"Please contact the creator (Ogthem) for assistance.\n"
                 f"Error: {e}"
             )
-            await ctx.respond(error_message)
+            await interaction.response.send_message(error_message)
 
 async def setup(bot):
     await bot.add_cog(Status(bot))
