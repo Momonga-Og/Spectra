@@ -21,5 +21,7 @@ class Poll(commands.Cog):
 async def setup(bot):
     cog = Poll(bot)
     await bot.add_cog(cog)
-    bot.tree.add_command(cog.poll)
-    bot.tree.add_command(cog.pm)
+    if not bot.tree.get_command('poll'):
+        bot.tree.add_command(cog.poll)
+    if not bot.tree.get_command('pm'):
+        bot.tree.add_command(cog.pm)
