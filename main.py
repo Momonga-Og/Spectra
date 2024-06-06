@@ -18,8 +18,10 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # Define an asynchronous function to load cogs
 async def load_extensions():
     await bot.load_extension('cogs.general')
-    await bot.load_extension('cogs.voice')
+    await bot.load_extension('cogs.moderation')
+    await bot.load_extension('cogs.poll')
     await bot.load_extension('cogs.admin')
+    await bot.load_extension('cogs.voice')
 
 # Define the main function to run the bot
 async def main():
