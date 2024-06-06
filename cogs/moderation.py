@@ -29,7 +29,11 @@ class Moderation(commands.Cog):
 async def setup(bot):
     cog = Moderation(bot)
     await bot.add_cog(cog)
-    bot.tree.add_command(cog.mute)
-    bot.tree.add_command(cog.deafen)
-    bot.tree.add_command(cog.kick)
-    bot.tree.add_command(cog.ban)
+    if not bot.tree.get_command('mute'):
+        bot.tree.add_command(cog.mute)
+    if not bot.tree.get_command('deafen'):
+        bot.tree.add_command(cog.deafen)
+    if not bot.tree.get_command('kick'):
+        bot.tree.add_command(cog.kick)
+    if not bot.tree.get_command('ban'):
+        bot.tree.add_command(cog.ban)
