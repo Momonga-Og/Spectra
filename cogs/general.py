@@ -74,10 +74,17 @@ class General(commands.Cog):
 async def setup(bot):
     cog = General(bot)
     await bot.add_cog(cog)
-    bot.tree.add_command(cog.pick)
-    bot.tree.add_command(cog.pick_s)
-    bot.tree.add_command(cog.cname)
-    bot.tree.add_command(cog.mhelp)
-    bot.tree.add_command(cog.eight_ball)
-    bot.tree.add_command(cog.trivia)
-    bot.tree.add_command(cog.color)
+    if not bot.tree.get_command('pick'):
+        bot.tree.add_command(cog.pick)
+    if not bot.tree.get_command('pick_s'):
+        bot.tree.add_command(cog.pick_s)
+    if not bot.tree.get_command('cname'):
+        bot.tree.add_command(cog.cname)
+    if not bot.tree.get_command('mhelp'):
+        bot.tree.add_command(cog.mhelp)
+    if not bot.tree.get_command('8ball'):
+        bot.tree.add_command(cog.eight_ball)
+    if not bot.tree.get_command('trivia'):
+        bot.tree.add_command(cog.trivia)
+    if not bot.tree.get_command('color'):
+        bot.tree.add_command(cog.color)
