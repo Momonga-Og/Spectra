@@ -20,7 +20,6 @@ async def load_extensions():
     await bot.load_extension('cogs.general')
     await bot.load_extension('cogs.voice')
     await bot.load_extension('cogs.admin')
-    await bot.load_extension('cogs.status')  # Load the status cog
 
 # Define the main function to run the bot
 async def main():
