@@ -56,6 +56,9 @@ class Voice(commands.Cog):
             except asyncio.TimeoutError:
                 logging.warning(f"Timeout while connecting to voice channel. Attempt {attempt + 1}/{retries}")
                 await asyncio.sleep(delay)
+            except AttributeError as e:
+                logging.exception(f"AttributeError in connect_to_voice: {e}")
+                return None
         logging.error("Failed to connect to voice channel after several attempts")
         return None
 
