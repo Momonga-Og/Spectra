@@ -46,4 +46,5 @@ class General(commands.Cog):
 async def setup(bot):
     cog = General(bot)
     await bot.add_cog(cog)
-    bot.tree.add_command(cog.eight_ball)
+    if not bot.tree.get_command('8ball'):
+        bot.tree.add_command(cog.eight_ball)
