@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+import logging
 
 class Moderation(commands.Cog):
     def __init__(self, bot):
@@ -8,23 +9,39 @@ class Moderation(commands.Cog):
 
     @app_commands.command(name="mute", description="Mute a member")
     async def mute(self, interaction: discord.Interaction, member: discord.Member):
-        await member.edit(mute=True)
-        await interaction.response.send_message(f'{member.display_name} has been muted.')
+        try:
+            await member.edit(mute=True)
+            await interaction.response.send_message(f'{member.display_name} has been muted.')
+        except Exception as e:
+            logging.exception("Error in mute command")
+            await interaction.response.send_message("An error occurred while processing your command.")
 
     @app_commands.command(name="deafen", description="Deafen a member")
     async def deafen(self, interaction: discord.Interaction, member: discord.Member):
-        await member.edit(deafen=True)
-        await interaction.response.send_message(f'{member.display_name} has been deafened.')
+        try:
+            await member.edit(deafen=True)
+            await interaction.response.send_message(f'{member.display_name} has been deafened.')
+        except Exception as e:
+            logging.exception("Error in deafen command")
+            await interaction.response.send_message("An error occurred while processing your command.")
 
     @app_commands.command(name="kick", description="Kick a member")
     async def kick(self, interaction: discord.Interaction, member: discord.Member):
-        await member.kick()
-        await interaction.response.send_message(f'{member.display_name} has been kicked.')
+        try:
+            await member.kick()
+            await interaction.response.send_message(f'{member.display_name} has been kicked.')
+        except Exception as e:
+            logging.exception("Error in kick command")
+            await interaction.response.send_message("An error occurred while processing your command.")
 
     @app_commands.command(name="ban", description="Ban a member")
     async def ban(self, interaction: discord.Interaction, member: discord.Member):
-        await member.ban()
-        await interaction.response.send_message(f'{member.display_name} has been banned.')
+        try:
+            await member.ban()
+            await interaction.response.send_message(f'{member.display_name} has been banned.')
+        except Exception as e:
+            logging.exception("Error in ban command")
+            await interaction.response.send_message("An error occurred while processing your command.")
 
 async def setup(bot):
     cog = Moderation(bot)
