@@ -33,6 +33,10 @@ class Voice(commands.Cog):
                     welcome_text = f'Welcome to the voice channel, {member.name}!'
                     self.text_to_speech(welcome_text, audio_file)
 
+                    if not os.path.exists(audio_file):
+                        print(f"Error: The audio file {audio_file} was not created.")
+                        return
+
                     vc.play(discord.FFmpegPCMAudio(audio_file))
 
                     while vc.is_playing():
