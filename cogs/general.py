@@ -16,14 +16,15 @@ class General(commands.Cog):
         except Exception as e:
             print(e)
 
-    @app_commands.command(name="pick", description="Pick a random item from a list")
-    async def pick(self, interaction: discord.Interaction, *choices: str):
-        choice = random.choice(choices)
+    @app_commands.command(name="pick", description="Pick a random item from two choices")
+    async def pick(self, interaction: discord.Interaction, choice1: str, choice2: str):
+        choice = random.choice([choice1, choice2])
         await interaction.response.send_message(f'You should pick: {choice}')
 
-    @app_commands.command(name="pick-s", description="Pick a random item from a comma-separated list")
+    @app_commands.command(name="pick_s", description="Pick a random item from a comma-separated list")
     async def pick_s(self, interaction: discord.Interaction, choices: str):
-        choice = random.choice(choices.split(','))
+        choice_list = choices.split(',')
+        choice = random.choice(choice_list)
         await interaction.response.send_message(f'You should pick: {choice.strip()}')
 
     @app_commands.command(name="cname", description="Change a member's nickname")
