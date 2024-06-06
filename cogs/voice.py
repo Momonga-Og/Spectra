@@ -3,6 +3,7 @@ from discord.ext import commands
 from gtts import gTTS
 import os
 import asyncio
+import logging
 
 class Voice(commands.Cog):
     def __init__(self, bot):
@@ -34,7 +35,7 @@ class Voice(commands.Cog):
                     self.text_to_speech(welcome_text, audio_file)
 
                     if not os.path.exists(audio_file):
-                        print(f"Error: The audio file {audio_file} was not created.")
+                        logging.error(f"Error: The audio file {audio_file} was not created.")
                         return
 
                     vc.play(discord.FFmpegPCMAudio(audio_file))
@@ -48,7 +49,12 @@ class Voice(commands.Cog):
                     # Clean up the audio file after use
                     os.remove(audio_file)
                 except Exception as e:
-                    print(f"Error in on_voice_state_update: {e}")
+                    logging.exception(f"Error in on_voice_state_update: {e}")
+
+    async def cog_unload(self):
+        for vc in self.bot.voice_clients:
+            await vc.disconnect()
 
 async def setup(bot):
-    await bot.add_cog(Voice(bot))
+    cog = Voice(bot)
+    await bot.add_cog(cog)
