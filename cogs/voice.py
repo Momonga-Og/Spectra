@@ -23,12 +23,9 @@ class Voice(commands.Cog):
             
             if not member.bot and member.id not in self.blocked_users[guild_id]:
                 try:
-                    if not self.bot.voice_clients:
-                        vc = await after.channel.connect()
-                    else:
-                        vc = self.bot.voice_clients[0]
-                        if vc.channel != after.channel:
-                            await vc.move_to(after.channel)
+                    vc = await self.connect_to_voice(after.channel)
+                    if not vc:
+                        return
 
                     audio_file = f'{member.name}_welcome.mp3'
                     welcome_text = f'Welcome to the voice channel, {member.name}!'
@@ -50,6 +47,17 @@ class Voice(commands.Cog):
                     os.remove(audio_file)
                 except Exception as e:
                     logging.exception(f"Error in on_voice_state_update: {e}")
+
+    async def connect_to_voice(self, channel, retries=3, delay=5):
+        for attempt in range(retries):
+            try:
+                vc = await channel.connect(timeout=30)
+                return vc
+            except asyncio.TimeoutError:
+                logging.warning(f"Timeout while connecting to voice channel. Attempt {attempt + 1}/{retries}")
+                await asyncio.sleep(delay)
+        logging.error("Failed to connect to voice channel after several attempts")
+        return None
 
     async def cog_unload(self):
         for vc in self.bot.voice_clients:
