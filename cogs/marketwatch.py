@@ -1,8 +1,10 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-import requests
-from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 import logging
 
 class MarketWatch(commands.Cog):
@@ -14,28 +16,29 @@ class MarketWatch(commands.Cog):
         await interaction.response.defer()  # Defer the response to give time for scraping
 
         try:
-            # URL for the base market page
+            # Setup Chrome options
+            chrome_options = webdriver.ChromeOptions()
+            chrome_options.add_argument("--headless")  # Ensure GUI is off
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+
+            # Set path to chromedriver as per your configuration
+            driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
+
+            # Open the website
             url = "https://www.vulbis.com/?Touch&server=Dodge&gids=&percent=0&craftableonly=false&select-type=1&sellchoice=false&buyqty=1&sellqty=1&percentsell=0"
-            response = requests.get(url)
-            if response.status_code != 200:
-                await interaction.followup.send("Failed to retrieve data from the website.")
-                return
+            driver.get(url)
 
-            # Print the raw HTML content for debugging purposes
-            raw_html = response.content.decode('utf-8')
-            print(raw_html)  # Use print instead of logging
-            
-            soup = BeautifulSoup(response.content, 'html.parser')
-            table = soup.find('table', {'id': 'myTable'})  # Update with the correct table id or class
+            # Wait for the page to load (adjust the waiting time as needed)
+            driver.implicitly_wait(10)
 
-            if not table:
-                await interaction.followup.send("Could not find the market data table.")
-                return
+            # Find the table by its id or class
+            table = driver.find_element(By.ID, 'myTable')  # Update with the correct table id or class
+            rows = table.find_elements(By.TAG_NAME, 'tr')
 
-            rows = table.find_all('tr')
             item_data = []
             for row in rows:
-                columns = row.find_all('td')
+                columns = row.find_elements(By.TAG_NAME, 'td')
                 if columns and item.lower() in columns[0].text.lower():
                     item_name = columns[0].text.strip()
                     price_in_market = columns[3].text.strip()  # Adjust index based on the actual column
@@ -63,6 +66,8 @@ class MarketWatch(commands.Cog):
         except Exception as e:
             logging.exception(f"Error in marketwatch command: {e}")
             await interaction.followup.send(f"An error occurred while processing your request: {e}")
+        finally:
+            driver.quit()  # Ensure the browser is closed
 
 async def setup(bot):
     cog = MarketWatch(bot)
