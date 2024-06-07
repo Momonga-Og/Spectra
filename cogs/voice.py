@@ -5,6 +5,8 @@ import os
 import asyncio
 import logging
 
+logging.basicConfig(level=logging.INFO)
+
 class Voice(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -45,20 +47,33 @@ class Voice(commands.Cog):
 
                     # Clean up the audio file after use
                     os.remove(audio_file)
+                except discord.ClientException as e:
+                    logging.error(f"ClientException in on_voice_state_update: {e}")
                 except Exception as e:
                     logging.exception(f"Error in on_voice_state_update: {e}")
 
     async def connect_to_voice(self, channel, retries=3, delay=5):
         for attempt in range(retries):
             try:
+                # Check if already connected to a voice channel
+                if any(vc.guild == channel.guild for vc in self.bot.voice_clients):
+                    raise discord.ClientException('Already connected to a voice channel.')
+
                 vc = await channel.connect(timeout=30)
                 return vc
             except asyncio.TimeoutError:
                 logging.warning(f"Timeout while connecting to voice channel. Attempt {attempt + 1}/{retries}")
                 await asyncio.sleep(delay)
-            except AttributeError as e:
-                logging.exception(f"AttributeError in connect_to_voice: {e}")
+            except discord.ClientException as e:
+                logging.error(f"ClientException in connect_to_voice: {e}")
                 return None
+            except AttributeError as e:
+                if "_MissingSentinel" in str(e):
+                    logging.warning(f"Attempt to connect resulted in AttributeError: {e}")
+                    await asyncio.sleep(delay)
+                else:
+                    logging.exception(f"Unexpected AttributeError in connect_to_voice: {e}")
+                    return None
         logging.error("Failed to connect to voice channel after several attempts")
         return None
 
