@@ -63,7 +63,7 @@ async def load_extensions():
         await bot.load_extension('cogs.poll')
         await bot.load_extension('cogs.admin')
         await bot.load_extension('cogs.voice')
-        await bot.load_extension('cogs.relocate')  # Add this line to load the relocate cog
+        await bot.load_extension('cogs.relocate')  # Ensure relocate cog is loaded
     except Exception as e:
         logging.exception("Failed to load extensions")
 
