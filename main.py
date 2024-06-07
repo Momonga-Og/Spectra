@@ -3,6 +3,7 @@ from discord.ext import commands
 import os
 import asyncio
 import logging
+import sys
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -38,15 +39,16 @@ async def on_close():
     logging.info("Bot is closing")
     await bot.session.close()
 
-async def reboot_bot(bot):
+async def reboot_bot():
     logging.info("Rebooting bot")
     await bot.close()
+    os.execl(sys.executable, sys.executable, *sys.argv)  # Restart the script
 
 def schedule_reboot(bot):
     async def reboot_task():
         while True:
-            await asyncio.sleep(300)  # 5 hours
-            await reboot_bot(bot)
+            await asyncio.sleep(180)  # 5 hours
+            await reboot_bot()
 
     bot.loop.create_task(reboot_task())
 
