@@ -5,19 +5,12 @@ import asyncio
 import logging
 import sys
 
-# Setting up logging
+# Setup logging
 logging.basicConfig(level=logging.INFO)
 
 # Load environment variables
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-#Created By 
-#M
-#o
-#M
-#o
-#n
-#g
-#a
+
 intents = discord.Intents.default()
 intents.members = True
 intents.voice_states = True
@@ -72,7 +65,8 @@ async def load_extensions():
         await bot.load_extension('cogs.voice')
         await bot.load_extension('cogs.relocate')
         await bot.load_extension('cogs.watermark')
-        await bot.load_extension('cogs.serverstats')  
+        await bot.load_extension('cogs.serverstats')
+        await bot.load_extension('cogs.marketwatch')  # Add this line to load the marketwatch cog
     except Exception as e:
         logging.exception("Failed to load extensions")
 
