@@ -27,7 +27,7 @@ class Voice(commands.Cog):
                 try:
                     # Check for existing voice clients and connect/move as needed
                     if not self.bot.voice_clients:
-                        vc = await after.channel.connect()
+                        vc = await after.channel.connect(timeout=60)  # Increase timeout to 60 seconds
                     else:
                         vc = self.bot.voice_clients[0]
                         if vc.channel != after.channel:
@@ -47,6 +47,8 @@ class Voice(commands.Cog):
 
                     # Clean up the audio file after use
                     os.remove(audio_file)
+                except asyncio.TimeoutError:
+                    logging.error("Failed to connect to voice channel due to timeout.")
                 except Exception as e:
                     logging.exception(f"Error in on_voice_state_update: {e}")
 
