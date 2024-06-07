@@ -28,7 +28,7 @@ class Watermark(commands.Cog):
                 
                 # Get the image dimensions
                 width, height = img.size
-                text_width, text_height = draw.textsize(watermark_text, font=font)
+                text_width, text_height = draw.textbbox((0, 0), watermark_text, font=font)[2:4]
                 
                 # Position the watermark at the bottom right corner
                 position = (width - text_width - 10, height - text_height - 10)
