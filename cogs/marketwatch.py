@@ -21,6 +21,10 @@ class MarketWatch(commands.Cog):
                 await interaction.followup.send("Failed to retrieve data from the website.")
                 return
 
+            # Log the raw HTML content for debugging purposes
+            raw_html = response.content.decode('utf-8')
+            logging.info(raw_html)
+            
             soup = BeautifulSoup(response.content, 'html.parser')
             table = soup.find('table', {'id': 'myTable'})  # Update with the correct table id or class
 
