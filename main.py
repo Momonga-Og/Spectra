@@ -19,6 +19,9 @@ intents.message_content = True
 # Initialize bot with commands.Bot
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+async def close_sessions():
+    await bot.session.close()
+
 @bot.event
 async def on_ready():
     logging.info(f'Logged in as {bot.user}')
@@ -37,7 +40,7 @@ async def on_disconnect():
 @bot.event
 async def on_close():
     logging.info("Bot is closing")
-    await bot.session.close()
+    await close_sessions()
 
 async def reboot_bot():
     logging.info("Rebooting bot")
@@ -47,7 +50,7 @@ async def reboot_bot():
 def schedule_reboot(bot):
     async def reboot_task():
         while True:
-            await asyncio.sleep(180)  # 5 hours
+            await asyncio.sleep(60)  # 5 hours
             await reboot_bot()
 
     bot.loop.create_task(reboot_task())
