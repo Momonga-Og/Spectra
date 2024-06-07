@@ -4,6 +4,8 @@ from discord import app_commands
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import logging
 
@@ -29,11 +31,11 @@ class MarketWatch(commands.Cog):
             url = "https://www.vulbis.com/?Touch&server=Dodge&gids=&percent=0&craftableonly=false&select-type=1&sellchoice=false&buyqty=1&sellqty=1&percentsell=0"
             driver.get(url)
 
-            # Wait for the page to load (adjust the waiting time as needed)
-            driver.implicitly_wait(10)
+            # Wait for the table to be present
+            WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'table.item-list')))
 
-            # Find the table by its class name (update as needed)
-            table = driver.find_element(By.CLASS_NAME, 'item-list')  # Update with the correct class name
+            # Find the table
+            table = driver.find_element(By.CSS_SELECTOR, 'table.item-list')  # Update with the correct selector
             rows = table.find_elements(By.TAG_NAME, 'tr')
 
             item_data = []
