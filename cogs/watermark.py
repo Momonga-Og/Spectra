@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from PIL import Image, ImageDraw, ImageFont
+import aiohttp
 import io
 import logging
 
@@ -17,11 +18,12 @@ class Watermark(commands.Cog):
                 await interaction.response.send_message("Please upload a valid image.")
                 return
 
-            # Download the user's profile picture
-            profile_image_url = interaction.user.display_avatar.url
-            async with self.bot.session.get(profile_image_url) as response:
-                profile_image_data = await response.read()
-            
+            async with aiohttp.ClientSession() as session:
+                # Download the user's profile picture
+                profile_image_url = interaction.user.display_avatar.url
+                async with session.get(profile_image_url) as response:
+                    profile_image_data = await response.read()
+
             profile_image = Image.open(io.BytesIO(profile_image_data)).convert("RGBA")
             profile_image = profile_image.resize((50, 50))  # Resize profile picture
 
@@ -29,7 +31,9 @@ class Watermark(commands.Cog):
             image_data = await image.read()
             with Image.open(io.BytesIO(image_data)).convert("RGBA") as img:
                 draw = ImageDraw.Draw(img)
-                font = ImageFont.truetype("arial.ttf", 30)  # Use a TTF font and increase size
+                # Use a TTF font and increase size; ensure the path to the font is correct
+                font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+                font = ImageFont.truetype(font_path, 30)
                 
                 # Watermark text
                 watermark_text = f"{interaction.user.name} - {interaction.guild.name}"
