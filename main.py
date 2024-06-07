@@ -3,7 +3,6 @@ from discord.ext import commands
 import os
 import asyncio
 import logging
-from utils.scheduler import schedule_reboot
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -22,11 +21,13 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     logging.info(f'Logged in as {bot.user}')
-    try:
-        synced = await bot.tree.sync()
-        logging.info(f"Synced {len(synced)} commands")
-    except Exception as e:
-        logging.exception("Failed to sync commands")
+    if not hasattr(bot, 'synced'):
+        try:
+            synced = await bot.tree.sync()
+            logging.info(f"Synced {len(synced)} commands")
+            bot.synced = True
+        except Exception as e:
+            logging.exception("Failed to sync commands")
 
 @bot.event
 async def on_disconnect():
@@ -36,6 +37,18 @@ async def on_disconnect():
 async def on_close():
     logging.info("Bot is closing")
     await bot.session.close()
+
+async def reboot_bot(bot):
+    logging.info("Rebooting bot")
+    await bot.close()
+
+def schedule_reboot(bot):
+    async def reboot_task():
+        while True:
+            await asyncio.sleep(300)  # 5 hours
+            await reboot_bot(bot)
+
+    bot.loop.create_task(reboot_task())
 
 # Define an asynchronous function to load cogs
 async def load_extensions():
