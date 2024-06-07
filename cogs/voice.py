@@ -49,6 +49,8 @@ class Voice(commands.Cog):
                     os.remove(audio_file)
                 except asyncio.TimeoutError:
                     logging.error("Failed to connect to voice channel due to timeout.")
+                except AttributeError as attr_err:
+                    logging.error(f"AttributeError in voice connection: {attr_err}")
                 except Exception as e:
                     logging.exception(f"Error in on_voice_state_update: {e}")
 
