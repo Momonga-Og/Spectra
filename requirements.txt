@@ -4,3 +4,4 @@ pynacl  # Required for Discord voice functionalities
 requests
 Pillow
 beautifulsoup4
+selenium
