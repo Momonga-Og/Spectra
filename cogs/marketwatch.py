@@ -32,8 +32,8 @@ class MarketWatch(commands.Cog):
             # Wait for the page to load (adjust the waiting time as needed)
             driver.implicitly_wait(10)
 
-            # Find the table by its id or class
-            table = driver.find_element(By.CLASS_NAME, 'myTable')  # Update with the correct table id or class
+            # Find the table by its class name (update as needed)
+            table = driver.find_element(By.CLASS_NAME, 'item-list')  # Update with the correct class name
             rows = table.find_elements(By.TAG_NAME, 'tr')
 
             item_data = []
