@@ -66,7 +66,6 @@ async def load_extensions():
         await bot.load_extension('cogs.relocate')
         await bot.load_extension('cogs.watermark')
         await bot.load_extension('cogs.serverstats')
-        await bot.load_extension('cogs.marketwatch')  # Add this line to load the marketwatch cog
     except Exception as e:
         logging.exception("Failed to load extensions")
 
