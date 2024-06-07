@@ -9,7 +9,7 @@ class Watermark(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="watermark", description="Watermark an image with your username and server name")
+    @app_commands.command(name="watermark", description="Watermark an image with your username, server name, and profile picture")
     async def watermark(self, interaction: discord.Interaction, image: discord.Attachment):
         try:
             # Ensure the attachment is an image
@@ -17,24 +17,34 @@ class Watermark(commands.Cog):
                 await interaction.response.send_message("Please upload a valid image.")
                 return
 
-            # Download the image
-            image_data = await image.read()
-            with Image.open(io.BytesIO(image_data)) as img:
-                draw = ImageDraw.Draw(img)
-                font = ImageFont.load_default()  # Default font, can be replaced with a specific TTF font
+            # Download the user's profile picture
+            profile_image_url = interaction.user.display_avatar.url
+            async with self.bot.session.get(profile_image_url) as response:
+                profile_image_data = await response.read()
+            
+            profile_image = Image.open(io.BytesIO(profile_image_data)).convert("RGBA")
+            profile_image = profile_image.resize((50, 50))  # Resize profile picture
 
+            # Download the image to be watermarked
+            image_data = await image.read()
+            with Image.open(io.BytesIO(image_data)).convert("RGBA") as img:
+                draw = ImageDraw.Draw(img)
+                font = ImageFont.truetype("arial.ttf", 30)  # Use a TTF font and increase size
+                
                 # Watermark text
                 watermark_text = f"{interaction.user.name} - {interaction.guild.name}"
+
+                # Position for the watermark text
+                text_position = (10, img.height - 60)
                 
-                # Get the image dimensions
-                width, height = img.size
-                text_width, text_height = draw.textbbox((0, 0), watermark_text, font=font)[2:4]
+                # Apply the watermark text
+                draw.text(text_position, watermark_text, font=font, fill=(255, 255, 255, 128))  # White text with transparency
+
+                # Position for the profile picture
+                profile_position = (10, img.height - 110)
                 
-                # Position the watermark at the bottom right corner
-                position = (width - text_width - 10, height - text_height - 10)
-                
-                # Apply the watermark
-                draw.text(position, watermark_text, font=font, fill=(255, 255, 255, 128))  # White text with transparency
+                # Paste the profile picture onto the image
+                img.paste(profile_image, profile_position, profile_image)
 
                 # Save the watermarked image to a bytes object
                 output_buffer = io.BytesIO()
