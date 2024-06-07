@@ -26,6 +26,7 @@ class Voice(commands.Cog):
             if not member.bot and member.id not in self.blocked_users[guild_id]:
                 try:
                     # Check for existing voice clients and connect/move as needed
+                    vc = None
                     if not self.bot.voice_clients:
                         vc = await after.channel.connect(timeout=60)  # Increase timeout to 60 seconds
                     else:
@@ -33,20 +34,23 @@ class Voice(commands.Cog):
                         if vc.channel != after.channel:
                             await vc.move_to(after.channel)
 
-                    audio_file = f'{member.name}_welcome.mp3'
-                    welcome_text = f'Welcome to the voice channel, {member.name}!'
-                    self.text_to_speech(welcome_text, audio_file)
+                    if vc and vc.is_connected():
+                        audio_file = f'{member.name}_welcome.mp3'
+                        welcome_text = f'Welcome to the voice channel, {member.name}!'
+                        self.text_to_speech(welcome_text, audio_file)
 
-                    vc.play(discord.FFmpegPCMAudio(audio_file))
+                        vc.play(discord.FFmpegPCMAudio(audio_file))
 
-                    while vc.is_playing():
-                        await asyncio.sleep(1)
+                        while vc.is_playing():
+                            await asyncio.sleep(1)
 
-                    if vc.is_connected():
-                        await vc.disconnect()
+                        if vc.is_connected():
+                            await vc.disconnect()
 
-                    # Clean up the audio file after use
-                    os.remove(audio_file)
+                        # Clean up the audio file after use
+                        os.remove(audio_file)
+                    else:
+                        logging.error("Failed to connect to voice channel.")
                 except asyncio.TimeoutError:
                     logging.error("Failed to connect to voice channel due to timeout.")
                 except AttributeError as attr_err:
