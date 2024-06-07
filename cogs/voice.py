@@ -65,6 +65,16 @@ class Voice(commands.Cog):
         logging.error("Failed to connect to voice channel after several attempts")
         return None
 
+    async def on_voice_server_update(self, data):
+        """Handle voice server updates."""
+        try:
+            if self.ws and hasattr(self.ws, 'close'):
+                await self.ws.close(4000)
+            else:
+                logging.warning("WebSocket object is missing or invalid.")
+        except AttributeError as e:
+            logging.exception(f"Error in on_voice_server_update: {e}")
+
     async def cog_unload(self):
         for vc in self.bot.voice_clients:
             await vc.disconnect()
