@@ -5,6 +5,8 @@ import os
 import asyncio
 import logging
 
+logging.basicConfig(level=logging.INFO)
+
 class Voice(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -52,6 +54,7 @@ class Voice(commands.Cog):
         for attempt in range(retries):
             try:
                 vc = await channel.connect(timeout=30)
+                logging.info(f"Connected to voice channel: {channel}")
                 return vc
             except asyncio.TimeoutError:
                 logging.warning(f"Timeout while connecting to voice channel. Attempt {attempt + 1}/{retries}")
