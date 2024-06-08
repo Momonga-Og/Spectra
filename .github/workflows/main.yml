@@ -35,7 +35,7 @@ jobs:
         run: |
           while true; do
             echo "Starting bot..."
-            timeout 5h python main.py  # Run the bot for 5 hours
+            timeout 1m python main.py  # Run the bot for 1 minute
             echo "Bot stopped. Restarting in 1 minute..."
             sleep 60  # Sleep for 1 minute before restarting
           done
