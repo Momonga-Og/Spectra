@@ -18,10 +18,17 @@ class Relocate(commands.Cog):
             channel = interaction.channel
             message = await channel.fetch_message(message_id)
             
-            logging.info(f"Fetched message: {message.content}")
+            logging.info(f"Fetched message: {message.content if message.content else 'Image/Embed'}")
 
-            # Send the message content to the target channel
-            await target_channel.send(f"**Message from {message.author.name} in {channel.mention}:**\n{message.content}")
+            # Relocate message content or attachments
+            if message.content:
+                await target_channel.send(f"**Message from {message.author.name} in {channel.mention}:**\n{message.content}")
+            elif message.attachments:
+                attachment = message.attachments[0]
+                await target_channel.send(file=await attachment.to_file())
+            else:
+                await interaction.followup.send("The message has no content or attachments to relocate.")
+                return
 
             # Delete the original message
             try:
