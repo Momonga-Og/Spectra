@@ -21,23 +21,28 @@ class Relocate(commands.Cog):
             logging.info(f"Fetched message: {message.content if message.content else 'Image/Embed'}")
 
             # Relocate message content or attachments
+            relocated = False
             if message.content:
                 await target_channel.send(f"**Message from {message.author.name} in {channel.mention}:**\n{message.content}")
+                relocated = True
             elif message.attachments:
-                for attachment in message.attachments:
-                    await target_channel.send(file=await attachment.to_file())
+                attachment = message.attachments[0]
+                await target_channel.send(file=await attachment.to_file())
+                relocated = True
             else:
                 await interaction.followup.send("The message has no content or attachments to relocate.")
                 return
 
-            # Delete the original message
-            try:
-                await message.delete()
-                logging.info("Original message deleted")
-                await interaction.followup.send("Message relocated successfully.")
-            except discord.errors.NotFound:
-                logging.warning("Message was not found or already deleted")
-                await interaction.followup.send("Message was not found or already deleted.")
+            # Ensure only one relocation happens
+            if relocated:
+                # Delete the original message
+                try:
+                    await message.delete()
+                    logging.info("Original message deleted")
+                    await interaction.followup.send("Message relocated successfully.")
+                except discord.errors.NotFound:
+                    logging.warning("Message was not found or already deleted")
+                    await interaction.followup.send("Message was not found or already deleted.")
         except discord.errors.NotFound:
             logging.error("The message ID provided does not exist")
             await interaction.followup.send("The message ID provided does not exist.")
