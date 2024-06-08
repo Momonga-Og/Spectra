@@ -64,9 +64,9 @@ async def load_extensions():
         await bot.load_extension('cogs.admin')
         await bot.load_extension('cogs.voice')
         await bot.load_extension('cogs.relocate')
-        await bot.load_extension('cogs.serverstats')
-        await bot.load_extension('cogs.talk')
         await bot.load_extension('cogs.watermark')
+        await bot.load_extension('cogs.serverstats')
+        await bot.load_extension('cogs.talk')  # Add this line
     except Exception as e:
         logging.exception("Failed to load extensions")
 
