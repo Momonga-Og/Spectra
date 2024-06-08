@@ -13,7 +13,11 @@ class Relocate(commands.Cog):
 
     @app_commands.command(name="relocate", description="Relocate a message to a different channel")
     async def relocate(self, interaction: discord.Interaction, message_id: str, target_channel: discord.TextChannel):
-        await interaction.response.defer(ephemeral=True)  # Defer the response to give time for processing
+        try:
+            await interaction.response.defer(ephemeral=True)  # Defer the response to give time for processing
+        except discord.errors.NotFound:
+            logging.error("Interaction not found when attempting to defer response")
+            return
 
         logging.info(f"Relocate command invoked by {interaction.user} for message {message_id} to {target_channel}")
 
