@@ -22,15 +22,20 @@ class Relocate(commands.Cog):
         logging.info(f"Relocate command invoked by {interaction.user} for message {message_id} to {target_channel}")
 
         try:
-            # Fetch the message by ID
-            channel = interaction.channel
-            message = await channel.fetch_message(message_id)
-
             # Ensure a lock exists for this message
             if message_id not in self.locks:
                 self.locks[message_id] = Lock()
 
             async with self.locks[message_id]:
+                # Fetch the message by ID
+                channel = interaction.channel
+                try:
+                    message = await channel.fetch_message(message_id)
+                except discord.errors.NotFound:
+                    logging.error("The message ID provided does not exist")
+                    await interaction.followup.send("The message ID provided does not exist.")
+                    return
+
                 # Check if the message is already being relocated
                 if message_id in self.relocating_messages:
                     await interaction.followup.send("This message is already being relocated.")
@@ -63,17 +68,22 @@ class Relocate(commands.Cog):
                         logging.warning("Missing permission to manage messages in the source channel.")
                         await interaction.followup.send("Relocation was successful, but the bot lacks permissions to delete the original message.")
                     else:
-                        # Delete the original message
-                        try:
-                            await message.delete()
-                            logging.info("Original message deleted")
-                            await interaction.followup.send("Message relocated successfully.")
-                        except discord.errors.NotFound:
-                            logging.warning("Message was not found or already deleted")
-                            await interaction.followup.send("Message was not found or already deleted.")
-        except discord.errors.NotFound:
-            logging.error("The message ID provided does not exist")
-            await interaction.followup.send("The message ID provided does not exist.")
+                        # Delete the original message with retry logic
+                        for attempt in range(3):
+                            try:
+                                await message.delete()
+                                logging.info("Original message deleted")
+                                await interaction.followup.send("Message relocated successfully.")
+                                break
+                            except discord.errors.NotFound:
+                                logging.warning("Message was not found or already deleted on attempt {attempt+1}")
+                                if attempt == 2:
+                                    await interaction.followup.send("Message was not found or already deleted after multiple attempts.")
+                            except discord.errors.Forbidden:
+                                logging.error("The bot lacks permissions to delete the message")
+                                await interaction.followup.send("Relocation was successful, but the bot lacks permissions to delete the original message.")
+                                break
+                            await asyncio.sleep(1)  # Wait before retrying
         except discord.errors.Forbidden:
             logging.error("The bot lacks permissions to perform this action")
             await interaction.followup.send("The bot lacks permissions to perform this action. Please ensure the bot has 'Manage Messages' permission.")
