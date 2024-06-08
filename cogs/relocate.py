@@ -11,10 +11,14 @@ class Relocate(commands.Cog):
     async def relocate(self, interaction: discord.Interaction, message_id: str, target_channel: discord.TextChannel):
         await interaction.response.defer(ephemeral=True)  # Defer the response to give time for processing
 
+        logging.info(f"Relocate command invoked by {interaction.user} for message {message_id} to {target_channel}")
+
         try:
             # Fetch the message by ID
             channel = interaction.channel
             message = await channel.fetch_message(message_id)
+            
+            logging.info(f"Fetched message: {message.content}")
 
             # Send the message content to the target channel
             await target_channel.send(f"**Message from {message.author.name} in {channel.mention}:**\n{message.content}")
@@ -22,10 +26,13 @@ class Relocate(commands.Cog):
             # Delete the original message
             try:
                 await message.delete()
+                logging.info("Original message deleted")
                 await interaction.followup.send("Message relocated successfully.")
             except discord.errors.NotFound:
+                logging.warning("Message was not found or already deleted")
                 await interaction.followup.send("Message was not found or already deleted.")
         except discord.errors.NotFound:
+            logging.error("The message ID provided does not exist")
             await interaction.followup.send("The message ID provided does not exist.")
         except Exception as e:
             logging.exception(f"Error in relocate command: {e}")
