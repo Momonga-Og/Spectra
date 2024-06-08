@@ -6,8 +6,6 @@ import os
 import asyncio
 import logging
 
-logging.basicConfig(level=logging.INFO)
-
 class Talk(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -16,60 +14,43 @@ class Talk(commands.Cog):
         tts = gTTS(text)
         tts.save(filename)
 
-    @app_commands.command(name="talk", description="Make the bot say a message in the voice channel")
+    @app_commands.command(name="talk", description="Make the bot say a message in a voice channel")
     async def talk(self, interaction: discord.Interaction, message: str):
-        await interaction.response.defer()  # Defer the response to give time for processing
+        await interaction.response.defer(ephemeral=True)  # Defer the response to give time for processing
 
-        user = interaction.user
-        channel = user.voice.channel if user.voice else None
-
-        if channel is None:
+        # Find the voice channel the user is in
+        voice_channel = None
+        if interaction.user.voice:
+            voice_channel = interaction.user.voice.channel
+        else:
             await interaction.followup.send("You need to be in a voice channel to use this command.")
             return
 
         try:
-            # Check for existing voice clients and connect/move as needed
-            vc = None
-            if not self.bot.voice_clients:
-                vc = await channel.connect(timeout=60)  # Increase timeout to 60 seconds
-            else:
-                vc = self.bot.voice_clients[0]
-                if vc.channel != channel:
-                    await vc.move_to(channel)
+            # Generate the audio file
+            audio_file = 'message.mp3'
+            self.text_to_speech(f"Message from {interaction.user.name}: {message}", audio_file)
 
-            if vc and vc.is_connected():
-                try:
-                    announce_text = f"Message from {user.name}: {message}"
-                    audio_file = f'{user.name}_talk.mp3'
-                    self.text_to_speech(announce_text, audio_file)
+            # Connect to the voice channel
+            vc = await voice_channel.connect()
+            vc.play(discord.FFmpegPCMAudio(audio_file))
 
-                    vc.play(discord.FFmpegPCMAudio(audio_file))
+            while vc.is_playing():
+                await asyncio.sleep(1)
 
-                    while vc.is_playing():
-                        await asyncio.sleep(1)
+            # Disconnect from the voice channel
+            if vc.is_connected():
+                await vc.disconnect()
 
-                    if vc.is_connected():
-                        await vc.disconnect()
+            # Clean up the audio file after use
+            os.remove(audio_file)
 
-                    # Clean up the audio file after use
-                    os.remove(audio_file)
-
-                    await interaction.followup.send("Message sent successfully.")
-                except Exception as e:
-                    logging.exception(f"Error in talk command: {e}")
-                    await interaction.followup.send(f"An error occurred: {e}")
-            else:
-                logging.error("Failed to connect to voice channel.")
-                await interaction.followup.send("Failed to connect to the voice channel.")
-        except asyncio.TimeoutError:
-            logging.error("Failed to connect to voice channel due to timeout.")
-            await interaction.followup.send("Failed to connect to the voice channel due to a timeout.")
+            await interaction.followup.send("Message delivered successfully.")
         except Exception as e:
             logging.exception(f"Error in talk command: {e}")
-            await interaction.followup.send(f"An error occurred: {e}")
+            await interaction.followup.send(f"An error occurred while processing your request: {e}")
 
 async def setup(bot):
     cog = Talk(bot)
     await bot.add_cog(cog)
-    if not bot.tree.get_command('talk'):
-        bot.tree.add_command(cog.talk)
+    bot.tree.add_command(cog.talk)
