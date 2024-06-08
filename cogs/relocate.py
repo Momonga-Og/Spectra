@@ -47,17 +47,25 @@ class Relocate(commands.Cog):
 
             # Ensure only one relocation happens
             if relocated:
-                # Delete the original message
-                try:
-                    await message.delete()
-                    logging.info("Original message deleted")
-                    await interaction.followup.send("Message relocated successfully.")
-                except discord.errors.NotFound:
-                    logging.warning("Message was not found or already deleted")
-                    await interaction.followup.send("Message was not found or already deleted.")
+                # Check for the necessary permissions to delete the message
+                if not channel.permissions_for(interaction.guild.me).manage_messages:
+                    logging.warning("Missing permission to manage messages in the source channel.")
+                    await interaction.followup.send("Relocation was successful, but the bot lacks permissions to delete the original message.")
+                else:
+                    # Delete the original message
+                    try:
+                        await message.delete()
+                        logging.info("Original message deleted")
+                        await interaction.followup.send("Message relocated successfully.")
+                    except discord.errors.NotFound:
+                        logging.warning("Message was not found or already deleted")
+                        await interaction.followup.send("Message was not found or already deleted.")
         except discord.errors.NotFound:
             logging.error("The message ID provided does not exist")
             await interaction.followup.send("The message ID provided does not exist.")
+        except discord.errors.Forbidden:
+            logging.error("The bot lacks permissions to perform this action")
+            await interaction.followup.send("The bot lacks permissions to perform this action. Please ensure the bot has 'Manage Messages' permission.")
         except Exception as e:
             logging.exception(f"Error in relocate command: {e}")
             await interaction.followup.send(f"An error occurred while processing your request: {e}")
