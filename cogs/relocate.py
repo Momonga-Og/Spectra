@@ -7,33 +7,29 @@ class Relocate(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="relocate", description="Relocate a message to a specified channel")
+    @app_commands.command(name="relocate", description="Relocate a message to a different channel")
     async def relocate(self, interaction: discord.Interaction, message_id: str, target_channel: discord.TextChannel):
-        # Fetch the message
+        await interaction.response.defer(ephemeral=True)  # Defer the response to give time for processing
+
         try:
-            message = await interaction.channel.fetch_message(int(message_id))
-        except discord.NotFound:
-            await interaction.response.send_message("Message not found.")
-            return
-        except discord.HTTPException as e:
-            logging.exception(f"HTTPException: {e}")
-            await interaction.response.send_message("Failed to fetch the message.")
-            return
+            # Fetch the message by ID
+            channel = interaction.channel
+            message = await channel.fetch_message(message_id)
 
-        # Check if the message has content or attachments
-        if not message.content and not message.attachments:
-            await interaction.response.send_message("The message has no content or attachments to relocate.")
-            return
+            # Send the message content to the target channel
+            await target_channel.send(f"**Message from {message.author.name} in {channel.mention}:**\n{message.content}")
 
-        # Repost the message content and attachments
-        files = [await attachment.to_file() for attachment in message.attachments]
-        await target_channel.send(content=message.content, files=files)
-        
-        # Optionally delete the original message
-        await message.delete()
-
-        # Send confirmation to the user
-        await interaction.response.send_message(f"Message relocated to {target_channel.mention}")
+            # Delete the original message
+            try:
+                await message.delete()
+                await interaction.followup.send("Message relocated successfully.")
+            except discord.errors.NotFound:
+                await interaction.followup.send("Message was not found or already deleted.")
+        except discord.errors.NotFound:
+            await interaction.followup.send("The message ID provided does not exist.")
+        except Exception as e:
+            logging.exception(f"Error in relocate command: {e}")
+            await interaction.followup.send(f"An error occurred while processing your request: {e}")
 
 async def setup(bot):
     cog = Relocate(bot)
