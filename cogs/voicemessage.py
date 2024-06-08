@@ -12,7 +12,7 @@ class VoiceMessage(commands.Cog):
         tts = gTTS(text)
         tts.save(filename)
 
-    @app_commands.command(name='VM', description="Set a voice message for a user")
+    @app_commands.command(name='vm', description="Set a voice message for a user")
     async def vm(self, interaction: discord.Interaction, member: discord.Member, message: str):
         if not hasattr(self.bot.get_cog('Voice'), 'message_to_deliver'):
             await interaction.response.send_message("Voice greeting functionality is not set up properly.")
