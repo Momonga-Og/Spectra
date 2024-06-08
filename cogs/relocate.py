@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import logging
+import asyncio
 
 class Relocate(commands.Cog):
     def __init__(self, bot):
@@ -14,14 +15,11 @@ class Relocate(commands.Cog):
 
         logging.info(f"Relocate command invoked by {interaction.user} for message {message_id} to {target_channel}")
 
-        # Clear any previous relocating state
-        self.relocating_messages.clear()
-
         try:
             # Fetch the message by ID
             channel = interaction.channel
             message = await channel.fetch_message(message_id)
-            
+
             # Check if the message is already being relocated
             if message_id in self.relocating_messages:
                 await interaction.followup.send("This message is already being relocated.")
@@ -38,8 +36,8 @@ class Relocate(commands.Cog):
                 await target_channel.send(f"**Message from {message.author.name} in {channel.mention}:**\n{message.content}")
                 relocated = True
             elif message.attachments:
-                attachment = message.attachments[0]
-                await target_channel.send(file=await attachment.to_file())
+                for attachment in message.attachments:
+                    await target_channel.send(file=await attachment.to_file())
                 relocated = True
             else:
                 await interaction.followup.send("The message has no content or attachments to relocate.")
@@ -47,6 +45,8 @@ class Relocate(commands.Cog):
 
             # Ensure only one relocation happens
             if relocated:
+                await asyncio.sleep(1)  # Small delay to ensure the message is sent before deleting the original
+
                 # Check for the necessary permissions to delete the message
                 if not channel.permissions_for(interaction.guild.me).manage_messages:
                     logging.warning("Missing permission to manage messages in the source channel.")
