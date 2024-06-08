@@ -11,6 +11,7 @@ class Voice(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.blocked_users = {}
+        self.message_to_deliver = {}
 
     def text_to_speech(self, text, filename):
         tts = gTTS(text)
@@ -28,33 +29,31 @@ class Voice(commands.Cog):
                     # Check for existing voice clients and connect/move as needed
                     vc = None
                     if not self.bot.voice_clients:
-                        vc = await after.channel.connect(timeout=60)  # Increase timeout to 60 seconds
+                        vc = await after.channel.connect()
                     else:
                         vc = self.bot.voice_clients[0]
                         if vc.channel != after.channel:
                             await vc.move_to(after.channel)
 
-                    if vc and vc.is_connected():
-                        audio_file = f'{member.name}_welcome.mp3'
-                        welcome_text = f'Welcome to the voice channel, {member.name}!'
-                        self.text_to_speech(welcome_text, audio_file)
-
-                        vc.play(discord.FFmpegPCMAudio(audio_file))
-
-                        while vc.is_playing():
-                            await asyncio.sleep(1)
-
-                        if vc.is_connected():
-                            await vc.disconnect()
-
-                        # Clean up the audio file after use
-                        os.remove(audio_file)
+                    # Deliver the custom message if it exists for the user
+                    if member.id in self.message_to_deliver:
+                        message = self.message_to_deliver.pop(member.id)
+                        audio_file = f'{member.name}_custom_message.mp3'
                     else:
-                        logging.error("Failed to connect to voice channel.")
-                except asyncio.TimeoutError:
-                    logging.error("Failed to connect to voice channel due to timeout.")
-                except AttributeError as attr_err:
-                    logging.error(f"AttributeError in voice connection: {attr_err}")
+                        message = f'Welcome to the voice channel, {member.name}!'
+                        audio_file = f'{member.name}_welcome.mp3'
+
+                    self.text_to_speech(message, audio_file)
+                    vc.play(discord.FFmpegPCMAudio(audio_file))
+
+                    while vc.is_playing():
+                        await asyncio.sleep(1)
+
+                    if member.id not in self.message_to_deliver and vc.is_connected():
+                        await vc.disconnect()
+
+                    # Clean up the audio file after use
+                    os.remove(audio_file)
                 except Exception as e:
                     logging.exception(f"Error in on_voice_state_update: {e}")
 
@@ -63,5 +62,4 @@ class Voice(commands.Cog):
             await vc.disconnect()
 
 async def setup(bot):
-    cog = Voice(bot)
-    await bot.add_cog(cog)
+    await bot.add_cog(Voice(bot))
