@@ -25,32 +25,34 @@ class Voice(commands.Cog):
             
             if not member.bot and member.id not in self.blocked_users[guild_id]:
                 try:
-                    vc = None
+                    # Check for existing voice clients and connect/move as needed
                     if not self.bot.voice_clients:
-                        vc = await after.channel.connect(timeout=60)
+                        vc = await after.channel.connect()
                     else:
                         vc = self.bot.voice_clients[0]
                         if vc.channel != after.channel:
                             await vc.move_to(after.channel)
 
-                    if vc and vc.is_connected():
-                        audio_file = f'{member.name}_welcome.mp3'
-                        welcome_text = f'Welcome to the voice channel, {member.name}!'
-                        self.text_to_speech(welcome_text, audio_file)
+                    audio_file = f'{member.name}_welcome.mp3'
+                    welcome_text = f'Welcome to the voice channel, {member.name}!'
+                    self.text_to_speech(welcome_text, audio_file)
 
-                        vc.play(discord.FFmpegPCMAudio(audio_file))
+                    vc.play(discord.FFmpegPCMAudio(audio_file))
 
-                        while vc.is_playing():
-                            await asyncio.sleep(1)
+                    while vc.is_playing():
+                        await asyncio.sleep(1)
 
-                        if vc.is_connected():
-                            await vc.disconnect()
+                    if vc.is_connected():
+                        await vc.disconnect()
 
-                        os.remove(audio_file)
-                    else:
-                        logging.error("Failed to connect or play audio")
+                    # Clean up the audio file after use
+                    os.remove(audio_file)
                 except Exception as e:
-                    logging.exception("Error in voice state update: %s", e)
+                    logging.exception(f"Error in on_voice_state_update: {e}")
 
-def setup(bot):
-    bot.add_cog(Voice(bot))
+    async def cog_unload(self):
+        for vc in self.bot.voice_clients:
+            await vc.disconnect()
+
+async def setup(bot):
+    await bot.add_cog(Voice(bot))
