@@ -3,68 +3,76 @@ from discord.ext import commands
 from discord import app_commands
 from PIL import Image, ImageDraw, ImageFont
 import aiohttp
-import io
 import logging
+import os
 
 class Watermark(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="watermark", description="Watermark an image with your username, server name, and profile picture")
+    async def add_watermark(self, image_bytes, user_name, server_name):
+        with Image.open(image_bytes) as im:
+            draw = ImageDraw.Draw(im)
+            font = ImageFont.load_default()
+            text = f"{user_name} - {server_name}"
+            textwidth, textheight = draw.textsize(text, font)
+            
+            # Calculate position for the text
+            width, height = im.size
+            x = width - textwidth - 10
+            y = height - textheight - 10
+            
+            # Draw the text on the image
+            draw.text((x, y), text, font=font)
+            
+            # Save the image with watermark
+            output_path = f"watermarked_{user_name}.png"
+            im.save(output_path)
+            
+        return output_path
+
+    @app_commands.command(name="watermark", description="Watermark an image with your username and the server name")
     async def watermark(self, interaction: discord.Interaction, image: discord.Attachment):
+        await interaction.response.defer(ephemeral=True)
         try:
-            # Ensure the attachment is an image
-            if not image.content_type.startswith('image/'):
-                await interaction.response.send_message("Please upload a valid image.")
-                return
-
+            user_name = interaction.user.name
+            server_name = interaction.guild.name
             async with aiohttp.ClientSession() as session:
-                # Download the user's profile picture
-                profile_image_url = interaction.user.display_avatar.url
-                async with session.get(profile_image_url) as response:
-                    profile_image_data = await response.read()
-
-            profile_image = Image.open(io.BytesIO(profile_image_data)).convert("RGBA")
-            profile_image = profile_image.resize((50, 50))  # Resize profile picture
-
-            # Download the image to be watermarked
-            image_data = await image.read()
-            with Image.open(io.BytesIO(image_data)).convert("RGBA") as img:
-                draw = ImageDraw.Draw(img)
-                # Use a TTF font and increase size; ensure the path to the font is correct
-                font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-                font = ImageFont.truetype(font_path, 30)
-                
-                # Watermark text
-                watermark_text = f"{interaction.user.name} - {interaction.guild.name}"
-
-                # Position for the watermark text
-                text_position = (10, img.height - 60)
-                
-                # Apply the watermark text
-                draw.text(text_position, watermark_text, font=font, fill=(255, 255, 255, 128))  # White text with transparency
-
-                # Position for the profile picture
-                profile_position = (10, img.height - 110)
-                
-                # Paste the profile picture onto the image
-                img.paste(profile_image, profile_position, profile_image)
-
-                # Save the watermarked image to a bytes object
-                output_buffer = io.BytesIO()
-                img.save(output_buffer, format="PNG")
-                output_buffer.seek(0)
-
-                # Send the watermarked image
-                file = discord.File(fp=output_buffer, filename="watermarked.png")
-                await interaction.response.send_message("Here is your watermarked image:", file=file)
-
+                async with session.get(image.url) as response:
+                    if response.status == 200:
+                        image_bytes = await response.read()
+                        image_path = await self.add_watermark(image_bytes, user_name, server_name)
+                        await interaction.followup.send(file=discord.File(image_path))
+                        os.remove(image_path)
+                    else:
+                        await interaction.followup.send("Failed to download the image.")
         except Exception as e:
             logging.exception(f"Error in watermark command: {e}")
-            await interaction.response.send_message("An error occurred while processing your image.")
+            await interaction.followup.send(f"An error occurred: {e}")
+
+    @app_commands.command(name="watermark-user", description="Watermark an image with another user's name and the server name")
+    async def watermark_user(self, interaction: discord.Interaction, image: discord.Attachment, user: discord.Member):
+        await interaction.response.defer(ephemeral=True)
+        try:
+            user_name = user.name
+            server_name = interaction.guild.name
+            async with aiohttp.ClientSession() as session:
+                async with session.get(image.url) as response:
+                    if response.status == 200:
+                        image_bytes = await response.read()
+                        image_path = await self.add_watermark(image_bytes, user_name, server_name)
+                        await interaction.followup.send(file=discord.File(image_path))
+                        os.remove(image_path)
+                    else:
+                        await interaction.followup.send("Failed to download the image.")
+        except Exception as e:
+            logging.exception(f"Error in watermark-user command: {e}")
+            await interaction.followup.send(f"An error occurred: {e}")
 
 async def setup(bot):
     cog = Watermark(bot)
     await bot.add_cog(cog)
     if not bot.tree.get_command('watermark'):
         bot.tree.add_command(cog.watermark)
+    if not bot.tree.get_command('watermark-user'):
+        bot.tree.add_command(cog.watermark_user)
