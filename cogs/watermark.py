@@ -5,13 +5,14 @@ from PIL import Image, ImageDraw, ImageFont
 import aiohttp
 import logging
 import os
+import io
 
 class Watermark(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     async def add_watermark(self, image_bytes, user_name, server_name):
-        with Image.open(image_bytes) as im:
+        with Image.open(io.BytesIO(image_bytes)) as im:
             draw = ImageDraw.Draw(im)
             font = ImageFont.load_default()
             text = f"{user_name} - {server_name}"
