@@ -16,7 +16,7 @@ class Watermark(commands.Cog):
             draw = ImageDraw.Draw(im)
             font = ImageFont.load_default()
             text = f"{user_name} - {server_name}"
-            textwidth, textheight = draw.textsize(text, font)
+            textwidth, textheight = font.getsize(text)
             
             # Calculate position for the text
             width, height = im.size
