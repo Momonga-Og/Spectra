@@ -1,12 +1,8 @@
 name: Deploy Discord Bot
-
 on:
   push:
     branches:
       - main  # Adjust to your target branch
-  schedule:
-    - cron: '0 */5 * * *'  # This will run the workflow every 5 hours
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -32,9 +28,4 @@ jobs:
       - name: Run the bot
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}  # Use the secret stored in GitHub
-        run: |
-          while true; do
-            echo "Starting bot..."
-            timeout 5h python main.py || echo "Bot exited with $?. Restarting in 1 minute..."
-            sleep 60  # Sleep for 1 minute before restarting
-          done
+        run: python main.py  # Start your Discord bot
