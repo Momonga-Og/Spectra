@@ -65,18 +65,3 @@ class Voice(commands.Cog):
 async def setup(bot):
     cog = Voice(bot)
     await bot.add_cog(cog)
-
-    @bot.command()
-    async def unlock(ctx):
-        await ctx.send("Unlock command executed")
-
-    @bot.command()
-    async def relocate(ctx, channel: discord.TextChannel, *, message):
-        try:
-            await message.delete()
-            await ctx.send(f"Message relocated to {channel.mention}")
-        except discord.errors.NotFound:
-            await ctx.send("The message you are trying to delete was not found.")
-        except Exception as e:
-            logging.exception(f"Error in relocate command: {e}")
-            await ctx.send("An error occurred while trying to relocate the message.")
