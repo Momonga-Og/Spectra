@@ -47,8 +47,12 @@ class Voice(commands.Cog):
 
                     # Clean up the audio file after use
                     os.remove(audio_file)
+                except discord.errors.ClientException as e:
+                    logging.exception(f"ClientException in on_voice_state_update: {e}")
+                except discord.errors.DiscordException as e:
+                    logging.exception(f"DiscordException in on_voice_state_update: {e}")
                 except Exception as e:
-                    logging.exception(f"Error in on_voice_state_update: {e}")
+                    logging.exception(f"Unexpected error in on_voice_state_update: {e}")
 
     async def cog_unload(self):
         for vc in self.bot.voice_clients:
