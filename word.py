@@ -4,7 +4,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-hidden_words = ["word1", "word2", "word3", "word4", "word5"]
+hidden_words = ["sparta", "egypt", "chance", "in3al bo khawana", "sir t9awed"]
 prize_message = "Congratulations! You've found a hidden word and won 5 MK!"
 
 class WordCog(commands.Cog):
