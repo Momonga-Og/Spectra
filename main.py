@@ -42,6 +42,7 @@ async def load_extensions():
         await bot.load_extension('cogs.watermark')
         await bot.load_extension('cogs.serverstats')
         await bot.load_extension('cogs.talk')
+        await bot.load_extension('word')  # Add this line to load the word extension
     except Exception as e:
         logging.exception("Failed to load extensions")
 
