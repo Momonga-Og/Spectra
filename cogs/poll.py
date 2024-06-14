@@ -13,13 +13,16 @@ class Poll(commands.Cog):
             embed = discord.Embed(title="Poll", description=question, color=0x00ff00)
             embed.add_field(name="Option 1", value=option1, inline=False)
             embed.add_field(name="Option 2", value=option2, inline=False)
-            message = await interaction.response.send_message(embed=embed)
+            
+            # Send the poll message using followup
+            message = await interaction.followup.send(embed=embed, wait=True)
 
+            # Add reactions to the message
             await message.add_reaction("1️⃣")
             await message.add_reaction("2️⃣")
         except Exception as e:
             logging.exception("Error in poll command")
-            await interaction.response.send_message("An error occurred while processing your command.")
+            await interaction.followup.send("An error occurred while processing your command.", ephemeral=True)
 
     @app_commands.command(name="pm", description="Send a private message")
     async def pm(self, interaction: discord.Interaction, member: discord.Member, message: str):
