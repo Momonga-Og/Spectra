@@ -14,9 +14,12 @@ class Poll(commands.Cog):
             embed.add_field(name="Option 1", value=option1, inline=False)
             embed.add_field(name="Option 2", value=option2, inline=False)
             
+            # Acknowledge the interaction first
+            await interaction.response.defer()
+            
             # Send the poll message using followup
-            message = await interaction.followup.send(embed=embed, wait=True)
-
+            message = await interaction.followup.send(embed=embed)
+            
             # Add reactions to the message
             await message.add_reaction("1️⃣")
             await message.add_reaction("2️⃣")
