@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+from io import BytesIO
 
 class WriteCog(commands.Cog):
     def __init__(self, bot):
@@ -21,14 +22,15 @@ class WriteCog(commands.Cog):
                 if image:
                     # Read the image bytes and create a discord.File object
                     img_bytes = await image.read()
-                    img_file = discord.File(fp=img_bytes, filename=image.filename)
+                    img_file = discord.File(fp=BytesIO(img_bytes), filename=image.filename)
                     files.append(img_file)
-
-                # Delete the original interaction message
-                await interaction.delete_original_response()
 
                 # Send the anonymized message with the optional image
                 await interaction.channel.send(content=content, files=files)
+                
+                # Defer the interaction response and delete it
+                await interaction.response.defer(ephemeral=True)
+                await interaction.delete_original_response()
             else:
                 await interaction.response.send_message("You do not have the necessary permissions to use this command.", ephemeral=True)
         except Exception as e:
@@ -45,4 +47,4 @@ class WriteCog(commands.Cog):
             pass
 
 async def setup(bot):
-    bot.tree.add_command(WriteCog(bot).write)
+    await bot.add_cog(WriteCog(bot))
