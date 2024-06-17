@@ -6,17 +6,30 @@ class WriteCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="write", description="Send an anonymous message. Only admins can use this command.")
-    @app_commands.checks.has_permissions(administrator=True)
-    async def write(self, interaction: discord.Interaction, message: str):
+    @app_commands.command(name="write", description="Send an anonymous message with an optional image. Only admins can use this command.")
+    @app_commands.describe(message="The message to send", image="Optional image to include with the message")
+    async def write(self, interaction: discord.Interaction, message: str, image: discord.Attachment = None):
         # Check if the user is an admin
         if interaction.user.guild_permissions.administrator:
-            # Delete the interaction message
-            await interaction.response.defer(ephemeral=True)  # Defer the response to avoid interaction timeout
-            await interaction.delete_original_response()  # Delete the original interaction message
+            # Defer the response to avoid interaction timeout
+            await interaction.response.defer(ephemeral=True)
 
-            # Send the anonymized message
-            await interaction.channel.send(message)
+            # Prepare the message content
+            content = message
+            files = []
+
+            # Check if an image is provided
+            if image:
+                # Download the image to a file object
+                img_bytes = await image.read()
+                img_file = discord.File(fp=img_bytes, filename=image.filename)
+                files.append(img_file)
+
+            # Delete the original interaction message
+            await interaction.delete_original_response()
+
+            # Send the anonymized message with the optional image
+            await interaction.channel.send(content=content, files=files)
         else:
             await interaction.response.send_message("You do not have the necessary permissions to use this command.", ephemeral=True)
 
