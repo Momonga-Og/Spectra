@@ -16,6 +16,19 @@ class Voice(commands.Cog):
         tts = gTTS(text)
         tts.save(filename)
 
+    async def connect_to_channel(self, channel, retries=3, delay=5):
+        """Attempts to connect to a voice channel with retries."""
+        for attempt in range(retries):
+            try:
+                vc = await channel.connect()
+                return vc
+            except asyncio.TimeoutError as e:
+                logging.warning(f"TimeoutError while connecting to voice channel, attempt {attempt + 1} of {retries}")
+                if attempt < retries - 1:
+                    await asyncio.sleep(delay)
+                else:
+                    raise e
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if before.channel is None and after.channel is not None:
@@ -28,7 +41,7 @@ class Voice(commands.Cog):
                     # Check for existing voice clients and connect/move as needed
                     vc = None
                     if not self.bot.voice_clients:
-                        vc = await after.channel.connect()
+                        vc = await self.connect_to_channel(after.channel)
                     else:
                         vc = self.bot.voice_clients[0]
                         if vc.channel != after.channel:
@@ -49,8 +62,11 @@ class Voice(commands.Cog):
                     if vc.is_connected():
                         await vc.disconnect()
 
-                    # Clean up the audio file after use
-                    os.remove(audio_file)
+                    # Check if the audio file exists before trying to remove it
+                    if os.path.exists(audio_file):
+                        os.remove(audio_file)
+                    else:
+                        logging.warning(f"Audio file {audio_file} not found for removal.")
                 except discord.errors.ClientException as e:
                     logging.exception(f"ClientException in on_voice_state_update: {e}")
                 except discord.errors.DiscordException as e:
