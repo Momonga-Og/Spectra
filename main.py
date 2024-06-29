@@ -43,7 +43,6 @@ async def load_extensions():
         await bot.load_extension('cogs.serverstats')
         await bot.load_extension('cogs.talk')
         await bot.load_extension('cogs.write') 
-        await bot.load_extension('cogs.welcome')  # Load the new welcome cog
     except Exception as e:
         logging.exception("Failed to load extensions")
 
