@@ -26,6 +26,7 @@ class Voice(commands.Cog):
             if not member.bot and member.id not in self.blocked_users[guild_id]:
                 try:
                     # Check for existing voice clients and connect/move as needed
+                    vc = None
                     if not self.bot.voice_clients:
                         vc = await after.channel.connect()
                     else:
@@ -37,11 +38,14 @@ class Voice(commands.Cog):
                     welcome_text = f'Welcome to the voice channel, {member.name}!'
                     self.text_to_speech(welcome_text, audio_file)
 
-                    vc.play(discord.FFmpegPCMAudio(audio_file))
+                    # Ensure we're not already playing something
+                    if not vc.is_playing():
+                        vc.play(discord.FFmpegPCMAudio(audio_file))
 
-                    while vc.is_playing():
-                        await asyncio.sleep(1)
+                        while vc.is_playing():
+                            await asyncio.sleep(1)
 
+                    # Disconnect after playing the welcome message
                     if vc.is_connected():
                         await vc.disconnect()
 
@@ -51,6 +55,8 @@ class Voice(commands.Cog):
                     logging.exception(f"ClientException in on_voice_state_update: {e}")
                 except discord.errors.DiscordException as e:
                     logging.exception(f"DiscordException in on_voice_state_update: {e}")
+                except asyncio.TimeoutError as e:
+                    logging.exception(f"TimeoutError in on_voice_state_update: {e}")
                 except Exception as e:
                     logging.exception(f"Unexpected error in on_voice_state_update: {e}")
 
