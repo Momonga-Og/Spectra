@@ -51,7 +51,7 @@ async def main():
         await load_extensions()
         token = os.getenv('DISCORD_BOT_TOKEN')
         if not token:
-            logging.error("Bot token not found. Please set the DISCORD_BOT_TOKEN environment variable.")
+            logging.error("Bot token ")
             return
         await bot.start(token)
 
