@@ -43,6 +43,7 @@ async def load_extensions():
         await bot.load_extension('cogs.serverstats')
         await bot.load_extension('cogs.talk')
         await bot.load_extension('cogs.write') 
+        await bot.load_extension('warning')  # Load the new warning extension
     except Exception as e:
         logging.exception("Failed to load extensions")
 
@@ -51,7 +52,7 @@ async def main():
         await load_extensions()
         token = os.getenv('DISCORD_BOT_TOKEN')
         if not token:
-            logging.error("Bot token ")
+            logging.error("Bot token not found")
             return
         await bot.start(token)
 
