@@ -22,12 +22,13 @@ class Voice(commands.Cog):
             try:
                 vc = await channel.connect()
                 return vc
-            except asyncio.TimeoutError as e:
-                logging.warning(f"TimeoutError while connecting to voice channel, attempt {attempt + 1} of {retries}")
+            except (asyncio.TimeoutError, discord.errors.ConnectionClosed) as e:
+                logging.warning(f"Error while connecting to voice channel, attempt {attempt + 1} of {retries}: {e}")
                 if attempt < retries - 1:
                     await asyncio.sleep(delay)
                 else:
                     raise e
+        return None
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -35,7 +36,7 @@ class Voice(commands.Cog):
             guild_id = member.guild.id
             if guild_id not in self.blocked_users:
                 self.blocked_users[guild_id] = set()
-            
+
             if not member.bot and member.id not in self.blocked_users[guild_id]:
                 try:
                     # Check for existing voice clients and connect/move as needed
@@ -46,27 +47,31 @@ class Voice(commands.Cog):
                         vc = self.bot.voice_clients[0]
                         if vc.channel != after.channel:
                             await vc.move_to(after.channel)
+                            vc = self.bot.voice_clients[0]
 
-                    audio_file = f'{member.name}_welcome.mp3'
-                    welcome_text = f'Welcome to the voice channel, {member.name}!'
-                    self.text_to_speech(welcome_text, audio_file)
+                    if vc and vc.is_connected():
+                        audio_file = f'{member.name}_welcome.mp3'
+                        welcome_text = f'Welcome to the voice channel, {member.name}!'
+                        self.text_to_speech(welcome_text, audio_file)
 
-                    # Ensure we're not already playing something
-                    if not vc.is_playing():
-                        vc.play(discord.FFmpegPCMAudio(audio_file))
+                        # Ensure we're not already playing something
+                        if not vc.is_playing():
+                            vc.play(discord.FFmpegPCMAudio(audio_file))
 
-                        while vc.is_playing():
-                            await asyncio.sleep(1)
+                            while vc.is_playing():
+                                await asyncio.sleep(1)
 
-                    # Disconnect after playing the welcome message
-                    if vc.is_connected():
-                        await vc.disconnect()
+                        # Disconnect after playing the welcome message
+                        if vc.is_connected():
+                            await vc.disconnect()
 
-                    # Check if the audio file exists before trying to remove it
-                    if os.path.exists(audio_file):
-                        os.remove(audio_file)
+                        # Check if the audio file exists before trying to remove it
+                        if os.path.exists(audio_file):
+                            os.remove(audio_file)
+                        else:
+                            logging.warning(f"Audio file {audio_file} not found for removal.")
                     else:
-                        logging.warning(f"Audio file {audio_file} not found for removal.")
+                        logging.error("Failed to connect to the voice channel after retries.")
                 except discord.errors.ClientException as e:
                     logging.exception(f"ClientException in on_voice_state_update: {e}")
                 except discord.errors.DiscordException as e:
