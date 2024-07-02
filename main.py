@@ -8,6 +8,9 @@ logging.basicConfig(level=logging.INFO)
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
+# Replace 'YOUR_USER_ID' with your actual Discord user ID
+OWNER_ID = 486652069831376943  # Example ID, replace with your actual Discord user ID
+
 async def close_sessions():
     await bot.session.close()
 
@@ -21,6 +24,16 @@ async def on_ready():
             bot.synced = True
         except Exception as e:
             logging.exception("Failed to sync commands")
+
+@bot.event
+async def on_message(message):
+    # Check if the message is a DM and not from the bot itself
+    if isinstance(message.channel, discord.DMChannel) and message.author != bot.user:
+        # Get the owner (you)
+        owner = await bot.fetch_user(OWNER_ID)
+        if owner:
+            # Forward the message content to the owner
+            await owner.send(f"Message from {message.author}: {message.content}")
 
 @bot.event
 async def on_disconnect():
