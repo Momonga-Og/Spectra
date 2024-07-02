@@ -7,7 +7,7 @@ class Attack(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="Perco-Attack", description="Send an SOS message for Perco attack")
+    @app_commands.command(name="perco-attack", description="Send an SOS message for Perco attack")
     async def perco_attack(self, interaction: discord.Interaction):
         try:
             message = (
@@ -17,10 +17,10 @@ class Attack(commands.Cog):
             )
             await interaction.response.send_message(message)
         except Exception as e:
-            logging.exception(f"Error in Perco-Attack command: {e}")
+            logging.exception(f"Error in perco-attack command: {e}")
             await interaction.response.send_message("An error occurred while sending the message.")
 
-    @app_commands.command(name="Prism-attack", description="Send an SOS message for Prism attack")
+    @app_commands.command(name="prism-attack", description="Send an SOS message for Prism attack")
     async def prism_attack(self, interaction: discord.Interaction):
         try:
             message = (
@@ -30,13 +30,13 @@ class Attack(commands.Cog):
             )
             await interaction.response.send_message(message)
         except Exception as e:
-            logging.exception(f"Error in Prism-attack command: {e}")
+            logging.exception(f"Error in prism-attack command: {e}")
             await interaction.response.send_message("An error occurred while sending the message.")
 
 async def setup(bot):
     cog = Attack(bot)
     await bot.add_cog(cog)
-    if not bot.tree.get_command('Perco-Attack'):
+    if not bot.tree.get_command('perco-attack'):
         bot.tree.add_command(cog.perco_attack)
-    if not bot.tree.get_command('Prism-attack'):
+    if not bot.tree.get_command('prism-attack'):
         bot.tree.add_command(cog.prism_attack)
