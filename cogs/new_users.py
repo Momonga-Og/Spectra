@@ -2,9 +2,15 @@ import discord
 from discord.ext import commands
 import logging
 
-GUILD_IDS = {
-    1218809218342326313: {'roles': ['hero', 'member'], 'channel': 'greeting'},
-    1258016370314969148: {'roles': ['hero', 'member'], 'channel': 'greeting'}
+GUILD_1_ID = 1218809218342326313
+GUILD_1_CONFIG = {'roles': ['hero', 'member'], 'channel': 'greeting'}
+
+GUILD_2_ID = 1258016370314969148
+GUILD_2_CONFIG = {'roles': ['hero', 'member'], 'channel': 'greeting'}
+
+GUILD_NAMES = {
+    GUILD_1_ID: "Server 1",
+    GUILD_2_ID: "Server 2"
 }
 
 class NewUsers(commands.Cog):
@@ -13,12 +19,20 @@ class NewUsers(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        guild_config = GUILD_IDS.get(member.guild.id)
+        guild_id = member.guild.id
+        guild_config = None
+
+        if guild_id == GUILD_1_ID:
+            guild_config = GUILD_1_CONFIG
+        elif guild_id == GUILD_2_ID:
+            guild_config = GUILD_2_CONFIG
+
         if guild_config:
+            server_name = GUILD_NAMES.get(guild_id, "the server")
             try:
-                # Send a welcome message to the new user with the server name
+                # Send a welcome message to the new user
                 await member.send(
-                    f"Hello and welcome to {member.guild.name}! Please reply to me with your in-game name so I can update your server name and assign your permissions."
+                    f"Hello and welcome to {server_name}! Please reply to me with your in-game name so I can update your server name and assign your permissions."
                 )
             except discord.Forbidden:
                 logging.error(f"Cannot send a DM to {member}. They may have DMs disabled.")
@@ -34,38 +48,31 @@ class NewUsers(commands.Cog):
         if isinstance(message.channel, discord.DMChannel) and message.author != self.bot.user:
             member = message.author
             in_game_name = message.content.strip()
-            current_guild = None
-            other_guild = None
 
-            for guild_id in GUILD_IDS.keys():
+            for guild_id, config in [(GUILD_1_ID, GUILD_1_CONFIG), (GUILD_2_ID, GUILD_2_CONFIG)]:
                 guild = self.bot.get_guild(guild_id)
                 if guild and guild.get_member(member.id):
-                    current_guild = guild
-                else:
-                    other_guild = self.bot.get_guild(guild_id)
+                    # Identify the appropriate role
+                    target_role = None
+                    for role_name in config['roles']:
+                        role = discord.utils.get(guild.roles, name=role_name)
+                        if role:
+                            target_role = role
+                            break
 
-            if current_guild and other_guild:
-                # Find the role in the other guild
-                config = GUILD_IDS[other_guild.id]
-                target_role = None
-                for role_name in config['roles']:
-                    role = discord.utils.get(other_guild.roles, name=role_name)
-                    if role:
-                        target_role = role
-                        break
+                    try:
+                        # Update the user's nickname in the server
+                        await guild.get_member(member.id).edit(nick=in_game_name)
 
-                try:
-                    # Update the user's nickname in the other server
-                    await other_guild.get_member(member.id).edit(nick=in_game_name)
+                        # Assign the appropriate role to the user
+                        if target_role:
+                            await guild.get_member(member.id).add_roles(target_role)
 
-                    # Assign the appropriate role to the user in the other server
-                    if target_role:
-                        await other_guild.get_member(member.id).add_roles(target_role)
-
-                    await member.send(f"Your in-game name has been updated to '{in_game_name}' and you have been assigned the '{target_role.name}' role in {other_guild.name}.")
-                except Exception as e:
-                    logging.exception(f"Error updating nickname and assigning role: {e}")
-                    await member.send("There was an error updating your nickname or assigning your role. Please contact an admin.")
+                        await member.send(f"Your in-game name has been updated to '{in_game_name}' and you have been assigned the '{target_role.name}' role in {GUILD_NAMES[guild_id]}.")
+                    except Exception as e:
+                        logging.exception(f"Error updating nickname and assigning role: {e}")
+                        await member.send("There was an error updating your nickname or assigning your role. Please contact an admin.")
+                    break
 
 async def setup(bot):
     cog = NewUsers(bot)
