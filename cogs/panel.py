@@ -12,9 +12,15 @@ REFERENCES = {
     'Frigost 3 Passage': ['876507383411666965']
 }
 
+# Update references for Maging
 MAGING_REFS = {
     'Exo Pa': '1079826155751866429',
     'Exo Pm': '1079826155751866429',
+    'Perfect Mage': '1129171675540361218',
+    'Exo Resi': '1129171675540361218',
+    'Exo Summ': '1129171675540361218',
+    'Exo Range': '1129171675540361218',
+    'Over element': '1129171675540361218',
     'Other': '1129171675540361218'
 }
 
@@ -34,7 +40,7 @@ class ActivityPanel(commands.Cog):
         )
 
         # Path to the image (you need to update this with the actual path)
-        image_path = "panel support.png"
+        image_path = "path/to/your/image.png"
 
         # Create an embed with the description and image
         embed = discord.Embed(description=description, color=discord.Color.blue())
@@ -70,7 +76,7 @@ class ActivityPanel(commands.Cog):
                 mentions = " ".join([f"<@{ref_id}>" for ref_id in references])
                 await temp_channel.send(f"{interaction.user.mention}, you have been referred to: {mentions}")
 
-                await interaction.response.send_message(f"Temporary channel created: {temp_channel.mention}", ephemeral=True)
+            await interaction.response.send_message(f"Temporary channel created: {temp_channel.mention}", ephemeral=True)
 
         for button in buttons:
             button.callback = button_callback
@@ -79,11 +85,12 @@ class ActivityPanel(commands.Cog):
         for button in buttons:
             view.add_item(button)
 
+        file = discord.File(image_path)
         await interaction.response.send_message(
             embed=embed,
             view=view,
             ephemeral=False,
-            file=discord.File(image_path)
+            file=file
         )
 
     @app_commands.command(name="close", description="Close the temporary channel.")
@@ -124,10 +131,7 @@ async def ask_mage_type_questions(channel, user, item):
     await channel.send(f"{user.mention}, what type of maging do you want?", view=view)
 
 async def refer_user_to_expert(channel, user, item, mage_type):
-    if mage_type in ['Exo Pa', 'Exo Pm']:
-        ref_id = MAGING_REFS['Exo Pa']
-    else:
-        ref_id = MAGING_REFS['Other']
+    ref_id = MAGING_REFS[mage_type]
 
     await channel.send(f"{user.mention} wants to mage a {item} and mage {mage_type}. You have been referred to: <@{ref_id}>")
 
