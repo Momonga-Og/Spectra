@@ -25,7 +25,7 @@ class ActivityPanel(commands.Cog):
         )
 
         # Path to the image (you need to update this with the actual path)
-        image_path = "path/to/your/image.png"
+        image_path = "panel support.png"
 
         # Create an embed with the description and image
         embed = discord.Embed(description=description, color=discord.Color.blue())
