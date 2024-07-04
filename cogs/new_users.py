@@ -13,8 +13,14 @@ class NewUsers(commands.Cog):
             await member.send(
                 "Hello and welcome to the server! Please reply to me with your in-game name so I can update your server name and assign your permissions."
             )
-        except Exception as e:
-            logging.exception(f"Error sending welcome message: {e}")
+        except discord.Forbidden:
+            logging.error(f"Cannot send a DM to {member}. They may have DMs disabled.")
+            # You can also notify a specific channel in your server if you prefer
+            channel = discord.utils.get(member.guild.text_channels, name='general')  # Replace 'general' with the desired channel
+            if channel:
+                await channel.send(
+                    f"Welcome {member.mention}! Please enable DMs so the bot can set your in-game name and permissions. Alternatively, reply here with your in-game name."
+                )
 
     @commands.Cog.listener()
     async def on_message(self, message):
