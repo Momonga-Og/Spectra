@@ -19,8 +19,8 @@ class ActivityPanel(commands.Cog):
     @app_commands.command(name="panel", description="Show the Sparta activity panel.")
     async def panel(self, interaction: discord.Interaction):
         description = (
-            "Hello to Sparta panel here you can ask and look for whatever you want.\n"
-            "Crafting. Maging. Hunting. Dropping. Attacking Other Perco. And Frigost 3 Passage\n"
+            "Hello to Sparta panel! Here you can ask and look for whatever you need:\n\n"
+            "**Crafting**\n**Maging**\n**Hunting**\n**Dropping**\n**Perco Attack**\n**Frigost 3 Passage**\n\n"
             "Just click below on whatever suits you and what you are looking for."
         )
 
@@ -28,13 +28,18 @@ class ActivityPanel(commands.Cog):
         image_path = "panel support.png"
 
         # Create an embed with the description and image
-        embed = discord.Embed(description=description)
+        embed = discord.Embed(description=description, color=discord.Color.blue())
         embed.set_image(url=f"attachment://{image_path.split('/')[-1]}")
 
         # Create buttons for each activity
-        buttons = []
-        for activity in REFERENCES.keys():
-            buttons.append(discord.ui.Button(label=activity, custom_id=activity))
+        buttons = [
+            discord.ui.Button(label='Crafting', custom_id='Crafting', style=discord.ButtonStyle.primary),
+            discord.ui.Button(label='Maging', custom_id='Maging', style=discord.ButtonStyle.secondary),
+            discord.ui.Button(label='Hunting', custom_id='Hunting', style=discord.ButtonStyle.success),
+            discord.ui.Button(label='Dropping', custom_id='Dropping', style=discord.ButtonStyle.danger),
+            discord.ui.Button(label='Perco Attack', custom_id='Perco Attack', style=discord.ButtonStyle.primary),
+            discord.ui.Button(label='Frigost 3 Passage', custom_id='Frigost 3 Passage', style=discord.ButtonStyle.secondary)
+        ]
 
         async def button_callback(interaction: discord.Interaction):
             activity = interaction.data['custom_id']
@@ -59,12 +64,8 @@ class ActivityPanel(commands.Cog):
             button.callback = button_callback
 
         view = discord.ui.View()
-        view.add_item(discord.ui.Button(label="Crafting", custom_id="Crafting"))
-        view.add_item(discord.ui.Button(label="Maging", custom_id="Maging"))
-        view.add_item(discord.ui.Button(label="Hunting", custom_id="Hunting"))
-        view.add_item(discord.ui.Button(label="Dropping", custom_id="Dropping"))
-        view.add_item(discord.ui.Button(label="Perco Attack", custom_id="Perco Attack"))
-        view.add_item(discord.ui.Button(label="Frigost 3 Passage", custom_id="Frigost 3 Passage"))
+        for button in buttons:
+            view.add_item(button)
 
         await interaction.response.send_message(
             embed=embed,
