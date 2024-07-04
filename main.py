@@ -59,6 +59,7 @@ async def load_extensions():
         await bot.load_extension('cogs.watermark_user')
         await bot.load_extension('cogs.attack')  # Added attack extension
         await bot.load_extension('cogs.new_users')  # Added new_users extension
+        await bot.load_extension('cogs.role') 
     except Exception as e:
         logging.exception("Failed to load extensions")
 
