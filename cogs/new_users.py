@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 import logging
 
+GUILD_ID = 1217700740949348443  # Replace with your server's guild ID
+
 class NewUsers(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -27,7 +29,7 @@ class NewUsers(commands.Cog):
         if isinstance(message.channel, discord.DMChannel) and message.author != self.bot.user:
             member = message.author
             in_game_name = message.content.strip()
-            guild = self.bot.get_guild(YOUR_GUILD_ID)  # Replace with your server's guild ID
+            guild = self.bot.get_guild(GUILD_ID)
             ally_role = discord.utils.get(guild.roles, name="ally")  # Replace with the exact role name
 
             try:
