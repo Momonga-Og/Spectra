@@ -48,10 +48,12 @@ class NewUsers(commands.Cog):
         if isinstance(message.channel, discord.DMChannel) and message.author != self.bot.user:
             member = message.author
             in_game_name = message.content.strip()
-            
+
             for guild_id, config in [(GUILD_1_ID, GUILD_1_CONFIG), (GUILD_2_ID, GUILD_2_CONFIG)]:
                 guild = self.bot.get_guild(guild_id)
-                if guild and guild.get_member(member.id):
+                guild_member = guild.get_member(member.id) if guild else None
+
+                if guild_member:
                     target_role = None
                     for role_name in config['roles']:
                         role = discord.utils.get(guild.roles, name=role_name)
@@ -61,11 +63,11 @@ class NewUsers(commands.Cog):
 
                     try:
                         # Update the user's nickname in the server
-                        await guild.get_member(member.id).edit(nick=in_game_name)
+                        await guild_member.edit(nick=in_game_name)
                         
                         # Assign the appropriate role to the user
                         if target_role:
-                            await guild.get_member(member.id).add_roles(target_role)
+                            await guild_member.add_roles(target_role)
 
                         await member.send(f"Your in-game name has been updated to '{in_game_name}' and you have been assigned the '{target_role.name}' role in {GUILD_NAMES[guild_id]}.")
                     except Exception as e:
