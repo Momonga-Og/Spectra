@@ -4,12 +4,10 @@ from discord import app_commands
 
 # Define guild roles
 GUILD_ROLE_OPTIONS = [
-    {'name': 'Guild 1', 'role_name': 'guild_1_tag'},
-    {'name': 'Guild 2', 'role_name': 'guild_2_tag'},
-    {'name': 'Guild 3', 'role_name': 'guild_3_tag'},
-    {'name': 'Guild 4', 'role_name': 'guild_4_tag'},
-    {'name': 'Guild 5', 'role_name': 'guild_5_tag'},
-    {'name': 'Guild 6', 'role_name': 'guild_6_tag'},
+    {'name': 'ENCE', 'role_name': 'ENCE'},
+    {'name': 'Olympus', 'role_name': 'Olympus'},
+    {'name': 'RzeczpospolitaPolska', 'role_name': 'RzeczpospolitaPolska'},
+    {'name': 'The Delian League', 'role_name': 'The Delian League'},
 ]
 
 class RoleUp(commands.Cog):
@@ -33,11 +31,11 @@ class RoleUp(commands.Cog):
         async def select_callback(select_interaction: discord.Interaction):
             selected_role_name = select_interaction.data['values'][0]
             role = discord.utils.get(interaction.guild.roles, name=selected_role_name)
-            if role:
-                await select_interaction.user.add_roles(role)
-                await select_interaction.response.send_message(f"You have been assigned the role: {role.name}", ephemeral=True)
-            else:
-                await select_interaction.response.send_message("Role not found. Please contact an admin.", ephemeral=True)
+            if not role:
+                # Create the role if it does not exist
+                role = await interaction.guild.create_role(name=selected_role_name)
+            await select_interaction.user.add_roles(role)
+            await select_interaction.response.send_message(f"You have been assigned the role: {role.name}", ephemeral=True)
 
         select_menu.callback = select_callback
 
