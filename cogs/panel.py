@@ -12,6 +12,15 @@ REFERENCES = {
     'Frigost 3 Passage': ['876507383411666965']
 }
 
+MAGING_REFS = {
+    'Exo Pa': '1079826155751866429',
+    'Exo Pm': '1079826155751866429',
+    'Other': '1129171675540361218'
+}
+
+ITEMS = ["Cap", "Hat", "Boots", "Ring", "Amu", "Belt", "Weapon", "Other"]
+MAGE_TYPES = ["Perfect Mage", "Exo Pa", "Exo Pm", "Exo Resi", "Exo Summ", "Exo Range", "Over element", "Other"]
+
 class ActivityPanel(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -53,12 +62,15 @@ class ActivityPanel(commands.Cog):
                 category=category
             )
 
-            # Mention the references in the new channel
-            references = REFERENCES[activity]
-            mentions = " ".join([f"<@{ref_id}>" for ref_id in references])
-            await temp_channel.send(f"{interaction.user.mention}, you have been referred to: {mentions}")
+            if activity == 'Maging':
+                await ask_maging_questions(temp_channel, interaction.user)
+            else:
+                # Mention the references in the new channel
+                references = REFERENCES[activity]
+                mentions = " ".join([f"<@{ref_id}>" for ref_id in references])
+                await temp_channel.send(f"{interaction.user.mention}, you have been referred to: {mentions}")
 
-            await interaction.response.send_message(f"Temporary channel created: {temp_channel.mention}", ephemeral=True)
+                await interaction.response.send_message(f"Temporary channel created: {temp_channel.mention}", ephemeral=True)
 
         for button in buttons:
             button.callback = button_callback
@@ -81,6 +93,43 @@ class ActivityPanel(commands.Cog):
             await interaction.response.send_message("Channel closed.", ephemeral=True)
         else:
             await interaction.response.send_message("You can only use this command in a temporary channel.", ephemeral=True)
+
+async def ask_maging_questions(channel, user):
+    class ItemSelect(discord.ui.Select):
+        def __init__(self):
+            options = [discord.SelectOption(label=item) for item in ITEMS]
+            super().__init__(placeholder="What Item you want to Mage?", min_values=1, max_values=1, options=options)
+
+        async def callback(self, interaction: discord.Interaction):
+            selected_item = self.values[0]
+            await interaction.response.send_message(f"You selected {selected_item}. Next question coming up...", ephemeral=True)
+            await ask_mage_type_questions(channel, user, selected_item)
+
+    view = discord.ui.View()
+    view.add_item(ItemSelect())
+    await channel.send(f"{user.mention}, what item do you want to mage?", view=view)
+
+async def ask_mage_type_questions(channel, user, item):
+    class MageTypeSelect(discord.ui.Select):
+        def __init__(self):
+            options = [discord.SelectOption(label=mage_type) for mage_type in MAGE_TYPES]
+            super().__init__(placeholder="What Type Of Maging You want?", min_values=1, max_values=1, options=options)
+
+        async def callback(self, interaction: discord.Interaction):
+            selected_mage_type = self.values[0]
+            await refer_user_to_expert(channel, user, item, selected_mage_type)
+
+    view = discord.ui.View()
+    view.add_item(MageTypeSelect())
+    await channel.send(f"{user.mention}, what type of maging do you want?", view=view)
+
+async def refer_user_to_expert(channel, user, item, mage_type):
+    if mage_type in ['Exo Pa', 'Exo Pm']:
+        ref_id = MAGING_REFS['Exo Pa']
+    else:
+        ref_id = MAGING_REFS['Other']
+
+    await channel.send(f"{user.mention} wants to mage a {item} and mage {mage_type}. You have been referred to: <@{ref_id}>")
 
 async def setup(bot):
     await bot.add_cog(ActivityPanel(bot))
