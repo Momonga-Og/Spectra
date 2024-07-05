@@ -29,12 +29,12 @@ class General(commands.Cog):
             logging.exception("Error in cname command")
             await interaction.response.send_message("An error occurred while processing your command.")
 
-    @app_commands.command(name="mhelp", description="Send help message")
+    @app_commands.command(name="privacy-policy", description="To read our privacy policy")
     async def mhelp(self, interaction: discord.Interaction):
         try:
-            await interaction.response.send_message('Help message')
+            await interaction.response.send_message('Please check our privacy policy here : https://github.com/Momonga-Og/Spectra/blob/main/PUBLIC%20PRIVACY%20POLICY.txt')
         except Exception as e:
-            logging.exception("Error in mhelp command")
+            logging.exception("Error in privacy-policy command")
             await interaction.response.send_message("An error occurred while processing your command.")
 
     @app_commands.command(name="8ball", description="Ask the magic 8-ball a question")
@@ -73,7 +73,7 @@ async def setup(bot):
     await bot.add_cog(cog)
     if not bot.tree.get_command('cname'):
         bot.tree.add_command(cog.cname)
-    if not bot.tree.get_command('mhelp'):
-        bot.tree.add_command(cog.mhelp)
+    if not bot.tree.get_command('privacy-policy'):
+        bot.tree.add_command(cog.privacy)
     if not bot.tree.get_command('8ball'):
         bot.tree.add_command(cog.eight_ball)
