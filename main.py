@@ -61,6 +61,8 @@ async def load_extensions():
         await bot.load_extension('cogs.new_users')  # Added new_users extension
         await bot.load_extension('cogs.role')
         await bot.load_extension('cogs.panel')
+        await bot.load_extension('cogs.youtube_mp3')
+
 
 
     except Exception as e:
