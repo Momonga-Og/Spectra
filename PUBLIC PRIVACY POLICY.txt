@@ -1,0 +1,33 @@
+
+
+Spectra Bot Privacy Policy
+
+Introduction
+Welcome to the Spectra Bot Privacy Policy. This policy outlines how Spectra handles your data and respects your privacy while using the bot.
+
+Data Collection
+Spectra does not collect, store, or share any personal or server data. Your privacy is our top priority, and we have taken measures to ensure that your data remains confidential and secure.
+
+No Data Storage
+Spectra is designed with your privacy in mind. We do not store any data from users or servers. This means:
+
+No User Data: Spectra does not store any personal information, including usernames, user IDs, or any other identifiable information.
+No Server Data: Spectra does not store any server-related information, including server names, channel names, or messages.
+No Activity Logs: Spectra does not keep logs of any actions performed by users or the bot itself.
+Data Usage
+Since Spectra does not store any data, there is no data usage beyond the immediate functionality required for the bot to operate. Any data processed by Spectra is used solely for providing the requested features and is not retained.
+
+Third-Party Services
+Spectra does not integrate with any third-party services that collect or store data.
+
+Security
+We prioritize the security of our users. By not storing any data, we minimize the risk of data breaches and ensure that your information remains private.
+
+Changes to This Policy
+We may update this privacy policy from time to time. Any changes will be reflected here, and we encourage you to review this policy periodically to stay informed about how Spectra handles your data.
+
+Contact Us
+If you have any questions or concerns about this privacy policy or Spectra's data practices, please contact us at:
+
+Email: srijafam@gmail.com
+Discord: Ogthem
