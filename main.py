@@ -63,6 +63,7 @@ async def load_extensions():
         await bot.load_extension('cogs.panel')
         await bot.load_extension('cogs.youtube_mp3')
         await bot.load_extension('cogs.image_converter')
+        await bot.load_extension('cogs.chatbox')
 
 
 
