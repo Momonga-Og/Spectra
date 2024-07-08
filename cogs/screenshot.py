@@ -14,7 +14,9 @@ class Screenshot(commands.Cog):
         await interaction.response.defer(ephemeral=True)
 
         # Fetch recent messages
-        messages = await interaction.channel.history(limit=20).flatten()
+        messages = []
+        async for message in interaction.channel.history(limit=20):
+            messages.append(message)
 
         # Reverse to show messages from oldest to newest
         messages.reverse()
