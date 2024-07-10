@@ -6,3 +6,5 @@ Pillow
 pytube
 moviepy
 rembg
+pydub
+yt-dlp
