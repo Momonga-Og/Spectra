@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from pytube import YouTube
-from moviepy.editor import AudioFileClip
+from pydub import AudioSegment
+import yt_dlp
 import os
 
 class YouTubeMP3(commands.Cog):
@@ -14,25 +14,26 @@ class YouTubeMP3(commands.Cog):
         await interaction.response.send_message("Processing your request...", ephemeral=True)
 
         try:
-            # Download the YouTube video
-            yt = YouTube(url)
-            audio_stream = yt.streams.filter(only_audio=True).first()
-            download_path = audio_stream.download()
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+                'outtmpl': 'downloads/%(id)s.%(ext)s'
+            }
 
-            # Convert to MP3
-            output_path = download_path.replace(".mp4", ".mp3")
-            audio_clip = AudioFileClip(download_path)
-            audio_clip.write_audiofile(output_path)
-            audio_clip.close()
-
-            # Remove the original file
-            os.remove(download_path)
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info_dict = ydl.extract_info(url, download=True)
+                video_id = info_dict.get("id", None)
+                audio_file = f"downloads/{video_id}.mp3"
 
             # Send the MP3 file to the user
-            await interaction.followup.send("Here is your MP3 file:", file=discord.File(output_path))
+            await interaction.followup.send("Here is your MP3 file:", file=discord.File(audio_file))
 
             # Clean up the MP3 file after sending
-            os.remove(output_path)
+            os.remove(audio_file)
 
         except Exception as e:
             await interaction.followup.send(f"An error occurred: {e}", ephemeral=True)
