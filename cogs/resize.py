@@ -25,7 +25,7 @@ class ResizeVideo(commands.Cog):
             # Run the video processing in a separate thread to avoid blocking the main thread
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(None, self.process_video, file_path, interaction)
-            
+
         except Exception as e:
             await interaction.followup.send(f"An error occurred: {e}", ephemeral=True)
 
@@ -37,9 +37,9 @@ class ResizeVideo(commands.Cog):
             output_path = file_path.rsplit('.', 1)[0] + "_resized.mp4"
             video_resized.write_videofile(output_path)
 
-            # Send the resized video to the user
+            # Schedule sending the video back to the user in the main event loop
             loop = asyncio.get_event_loop()
-            loop.create_task(self.send_video(interaction, output_path))
+            asyncio.run_coroutine_threadsafe(self.send_video(interaction, output_path), loop)
 
             # Clean up the files
             os.remove(file_path)
@@ -47,7 +47,7 @@ class ResizeVideo(commands.Cog):
 
         except Exception as e:
             loop = asyncio.get_event_loop()
-            loop.create_task(interaction.followup.send(f"An error occurred: {e}", ephemeral=True))
+            asyncio.run_coroutine_threadsafe(interaction.followup.send(f"An error occurred: {e}", ephemeral=True), loop)
 
     async def send_video(self, interaction, output_path):
         await interaction.followup.send("Here is your resized video:", file=discord.File(output_path))
