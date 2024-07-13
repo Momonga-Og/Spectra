@@ -67,6 +67,7 @@ async def load_extensions():
         await bot.load_extension('cogs.screenshot')
         await bot.load_extension('cogs.rbg')
         await bot.load_extension('cogs.resize')
+        await bot.load_extension('cogs.bow')
 
 
 
