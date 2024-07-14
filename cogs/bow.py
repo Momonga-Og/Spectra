@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+import re
 
 class ActivityTracker(commands.Cog):
     def __init__(self, bot):
@@ -11,35 +12,47 @@ class ActivityTracker(commands.Cog):
     async def prize(self, interaction: discord.Interaction, limit: int = 1000):
         await interaction.response.defer(ephemeral=True)
 
-        channel = interaction.channel
+        guild = interaction.guild
         message_counts = {}
         link_counts = {}
         media_counts = {}
 
-        async for message in channel.history(limit=limit):
-            if message.author.bot:
-                continue
+        for channel in guild.text_channels:
+            async for message in channel.history(limit=limit):
+                if message.author.bot:
+                    continue
 
-            user_id = message.author.id
-            message_counts[user_id] = message_counts.get(user_id, 0) + 1
+                user_id = message.author.id
 
-            if any(url in message.content for url in ['http://', 'https://']):
-                link_counts[user_id] = link_counts.get(user_id, 0) + 1
+                # Count messages
+                message_counts[user_id] = message_counts.get(user_id, 0) + 1
 
-            if message.attachments:
-                media_counts[user_id] = media_counts.get(user_id, 0) + 1
+                # Count links
+                if re.search(r'http[s]?://', message.content):
+                    link_counts[user_id] = link_counts.get(user_id, 0) + 1
 
-        leaderboard = sorted(message_counts.items(), key=lambda x: x[1], reverse=True)
+                # Count media
+                if message.attachments:
+                    media_counts[user_id] = media_counts.get(user_id, 0) + 1
+
+        # Calculate points and prepare leaderboard
+        points = {}
+        for user_id in set(list(message_counts.keys()) + list(link_counts.keys()) + list(media_counts.keys())):
+            points[user_id] = (
+                message_counts.get(user_id, 0) +
+                link_counts.get(user_id, 0) +
+                media_counts.get(user_id, 0)
+            )
+
+        leaderboard = sorted(points.items(), key=lambda x: x[1], reverse=True)
 
         result = "Activity Leaderboard:\n"
-        for user_id, msg_count in leaderboard[:10]:  # Top 10 users
-            user = interaction.guild.get_member(user_id)
-            link_count = link_counts.get(user_id, 0)
-            media_count = media_counts.get(user_id, 0)
-            result += (f"{user.display_name}: Messages: {msg_count}, "
-                       f"Links: {link_count}, Media: {media_count}\n")
+        for user_id, point in leaderboard[:10]:  # Top 10 users
+            user = guild.get_member(user_id)
+            if user:
+                result += f"{user.display_name}: {point} points (Messages: {message_counts.get(user_id, 0)}, Links: {link_counts.get(user_id, 0)}, Media: {media_counts.get(user_id, 0)})\n"
 
-        await interaction.followup.send(result)
+        await interaction.followup.send(result, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(ActivityTracker(bot))
