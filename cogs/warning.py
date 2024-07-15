@@ -36,7 +36,7 @@ class WarningSystem(commands.Cog):
             self.action_counts[member.id][action].append(now)
             total_actions = sum(len(times) for times in self.action_counts[member.id].values())
 
-            if total_actions > 2 and member.id not in self.warned_users:
+            if total_actions > 5 and member.id not in self.warned_users:
                 self.warned_users.add(member.id)
                 if after.channel:
                     await self.warn_user_in_voice(member, after.channel)
