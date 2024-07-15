@@ -1,13 +1,13 @@
 import discord
 from discord.ext import commands, tasks
-from discord import app_commands
 from collections import defaultdict
 import datetime
+import asyncio
 
 class WarningSystem(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.action_counts = defaultdict(lambda: defaultdict(int))
+        self.action_counts = defaultdict(lambda: defaultdict(list))
         self.warned_users = set()
 
     @commands.Cog.listener()
@@ -28,9 +28,11 @@ class WarningSystem(commands.Cog):
             else:
                 actions.append("move")
 
+        now = datetime.datetime.utcnow()
+
         for action in actions:
-            self.action_counts[member.id][action] += 1
-            total_actions = sum(self.action_counts[member.id].values())
+            self.action_counts[member.id][action].append(now)
+            total_actions = sum(len(times) for times in self.action_counts[member.id].values())
 
             if total_actions > 2 and member.id not in self.warned_users:
                 self.warned_users.add(member.id)
@@ -66,9 +68,8 @@ class WarningSystem(commands.Cog):
     async def reset_counts(self):
         now = datetime.datetime.utcnow()
         for user_id, actions in list(self.action_counts.items()):
-            for action, timestamp in list(actions.items()):
-                if (now - timestamp).total_seconds() > 3600:
-                    del self.action_counts[user_id][action]
+            for action, timestamps in list(actions.items()):
+                self.action_counts[user_id][action] = [ts for ts in timestamps if (now - ts).total_seconds() <= 3600]
             if not self.action_counts[user_id]:
                 del self.action_counts[user_id]
 
