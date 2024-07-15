@@ -46,6 +46,7 @@ class WarningSystem(commands.Cog):
         if voice_channel:
             vc = await voice_channel.connect()
             await self.send_warning(member, vc)
+            await vc.disconnect()
 
     async def warn_user_in_text(self, member):
         channel = discord.utils.get(member.guild.text_channels)
@@ -59,7 +60,6 @@ class WarningSystem(commands.Cog):
             vc.play(discord.FFmpegPCMAudio("warning_message.mp3"))
             while vc.is_playing():
                 await asyncio.sleep(1)
-            await vc.disconnect()
         await member.send(
             f"Please {member.display_name}, the functions you are using are not for amusement. They are for practical work, and you are disturbing your fellow users. This is my last warning, or you will be kicked from the server."
         )
