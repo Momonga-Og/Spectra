@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+import asyncio
 
 class WelcomeSparta(commands.Cog):
     def __init__(self, bot):
@@ -16,7 +17,7 @@ class WelcomeSparta(commands.Cog):
                 f"🎉 Welcome {member.mention} to Sparta! 🎉\n"
                 "We're thrilled to have you here! Make sure to check out our channels and enjoy your stay. 🎊"
             )
-            image_url = "https://github.com/Momonga-Og/Spectra/blob/db4e92dd8deaba15608bd0856f265f742097fc72/th.jpeg"  # Update this with your image URL
+            image_url = "https://raw.githubusercontent.com/<username>/<repository>/main/path_to_your_image.jpg"  # Update this with your GitHub raw image URL
             embed = discord.Embed(description=welcome_message, color=discord.Color.blue())
             embed.set_image(url=image_url)
             await public_channel.send(embed=embed)
@@ -29,12 +30,13 @@ class WelcomeSparta(commands.Cog):
                 "I hope you have a wonderful experience in our Discord server."
             )
 
-            view = WelcomeView(member.guild.roles)
+            view = WelcomeView(self.bot, member.guild.roles)
             await member.send(dm_message, view=view)
 
 class WelcomeView(discord.ui.View):
-    def __init__(self, roles):
+    def __init__(self, bot, roles):
         super().__init__()
+        self.bot = bot
         self.roles = roles
 
     @discord.ui.button(label="Change your Discord server name", style=discord.ButtonStyle.primary)
@@ -64,7 +66,7 @@ class WelcomeView(discord.ui.View):
 
     async def select_callback(self, interaction: discord.Interaction):
         role_name = interaction.data['values'][0]
-        role = discord.utils.get(interaction.guild.roles, name=role_name)
+        role = discord.utils.get(self.roles, name=role_name)
         if role:
             await interaction.user.add_roles(role)
             await interaction.followup.send(f"You have been assigned the {role_name} role.", ephemeral=True)
