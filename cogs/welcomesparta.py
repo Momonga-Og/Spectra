@@ -17,7 +17,7 @@ class WelcomeSparta(commands.Cog):
                 f"🎉 Welcome {member.mention} to Sparta! 🎉\n"
                 "We're thrilled to have you here! Make sure to check out our channels and enjoy your stay. 🎊"
             )
-            image_url = "https://raw.githubusercontent.com/<username>/<repository>/main/path_to_your_image.jpg"  # Update this with your GitHub raw image URL
+            image_url = "https://github.com/Momonga-Og/Spectra/blob/db4e92dd8deaba15608bd0856f265f742097fc72/th.jpeg?raw=true"  
             embed = discord.Embed(description=welcome_message, color=discord.Color.blue())
             embed.set_image(url=image_url)
             await public_channel.send(embed=embed)
