@@ -70,6 +70,7 @@ async def load_extensions():
         await bot.load_extension('cogs.bow')
         await bot.load_extension('cogs.welcomesparta')
         await bot.load_extension('cogs.contract')
+        await bot.load_extension('cogs.profession')
 
     except Exception as e:
         logging.exception("Failed to load extensions")
