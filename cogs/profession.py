@@ -6,7 +6,7 @@ import pandas as pd
 class Profession(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.file_path = '/Professions.xlsx'
+        self.file_path = './Professions.xlsx'  # Correct relative path
         self.professions = pd.ExcelFile(self.file_path).sheet_names
 
     @app_commands.command(name="profession", description="Get players by profession")
