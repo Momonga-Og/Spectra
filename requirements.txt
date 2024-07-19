@@ -8,3 +8,4 @@ moviepy
 rembg
 pydub
 yt-dlp
+pandas
