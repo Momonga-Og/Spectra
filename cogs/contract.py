@@ -44,13 +44,14 @@ Disclaimer: If any of the parties didn't follow the rules, they will be kicked a
             "channel_id": interaction.channel_id
         }
 
-        view = ContractView(who_invoked.id, input_user.id, self.contracts)
+        view = ContractView(self.bot, who_invoked.id, input_user.id, self.contracts)
         await who_invoked.send(f"Please review and sign the contract:\n\n{contract_text}", view=view)
         await input_user.send(f"Please review and sign the contract:\n\n{contract_text}", view=view)
 
 class ContractView(discord.ui.View):
-    def __init__(self, who_invoked_id, input_user_id, contracts):
+    def __init__(self, bot, who_invoked_id, input_user_id, contracts):
         super().__init__()
+        self.bot = bot
         self.who_invoked_id = who_invoked_id
         self.input_user_id = input_user_id
         self.contracts = contracts
