@@ -9,3 +9,4 @@ rembg
 pydub
 yt-dlp
 pandas
+openpyxl
