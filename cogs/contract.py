@@ -41,7 +41,8 @@ Disclaimer: If any of the parties didn't follow the rules, they will be kicked a
             "input_user": input_user.id,
             "contract_text": contract_text,
             "signed": [],
-            "channel_id": interaction.channel_id
+            "channel_id": interaction.channel_id,
+            "guild_id": interaction.guild_id  # Store guild ID
         }
 
         view = ContractView(self.bot, who_invoked.id, input_user.id, self.contracts)
@@ -65,9 +66,10 @@ class ContractView(discord.ui.View):
             contract["signed"].append(user_id)
 
         if len(contract["signed"]) == 2:
-            channel = self.bot.get_channel(contract["channel_id"])
-            final_contract = f"{contract['contract_text']}\n\nSigned by:\n{interaction.guild.get_member(self.who_invoked_id).mention}\n{interaction.guild.get_member(self.input_user_id).mention}"
-            await channel.send(f"Contract signed between {interaction.guild.get_member(self.who_invoked_id).mention} and {interaction.guild.get_member(self.input_user_id).mention}:\n{final_contract}")
+            guild = self.bot.get_guild(contract["guild_id"])
+            channel = guild.get_channel(contract["channel_id"])
+            final_contract = f"{contract['contract_text']}\n\nSigned by:\n{guild.get_member(self.who_invoked_id).mention}\n{guild.get_member(self.input_user_id).mention}"
+            await channel.send(f"Contract signed between {guild.get_member(self.who_invoked_id).mention} and {guild.get_member(self.input_user_id).mention}:\n{final_contract}")
             await interaction.response.send_message("Contract signed successfully!", ephemeral=True)
         else:
             await interaction.response.send_message("You have signed the contract. Waiting for the other party to sign.", ephemeral=True)
