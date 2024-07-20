@@ -97,7 +97,7 @@ class ActivityPanel(commands.Cog):
     async def create_temp_channel_callback(self, activity, select, interaction):
         async def callback(select_interaction):
             sub_activity = select_interaction.data['values'][0]
-            await self.create_temp_channel(sub_activity, select_interaction)
+            await self.create_temp_channel(sub_activity, interaction)
             await select_interaction.response.send_message(f"Temporary channel created for {sub_activity}", ephemeral=True)
 
         return callback
