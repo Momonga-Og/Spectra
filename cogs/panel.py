@@ -1,78 +1,125 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import app_commands
 
 # Define references for each activity
 REFERENCES = {
-    'Crafting': ['486652069831376943'],
-    'Maging': ['1129171675540361218', '1079826155751866429'],
-    'Hunting': ['1056141573580148776', '1205679923440656384', '449753564437413888'],
-    'Dropping': ['1056141573580148776', '1205679923440656384', '449753564437413888'],
-    'Perco Attack': ['876507383411666965', '422092705602994186', '998156191828029441', '966513865343004712'],
-    'Frigost 3 Passage': ['876507383411666965']
+    'Frigost 1': ['1205679923440656384', '1056141573580148776', '1129171675540361218', '486652069831376943'],
+    'Frigost 2': ['1205679923440656384', '1056141573580148776', '1129171675540361218', '486652069831376943'],
+    'Frigost 3': ['998156191828029441', '966513865343004712', '449753564437413888', '1056141573580148776', '1129171675540361218', '422092705602994186', '876507383411666965'],
+    'Pandala': ['998156191828029441', '966513865343004712', '449753564437413888', '1056141573580148776', '1129171675540361218', '422092705602994186', '876507383411666965'],
+    'Other Zones': ['1205679923440656384', '1056141573580148776', '1129171675540361218', '486652069831376943'],
+    'Quest': ['1205679923440656384', '998156191828029441', '449753564437413888'],
+    'Farming': ['960346191734931558', '998156191828029441', '966513865343004712', '1253198915600388217', '977510118495232030', '449753564437413888', '1129171675540361218', '486652069831376943', '1205679923440656384']
 }
 
 class ActivityPanel(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.guild_id = 1214430768143671377
+        self.channel_id = 1264143564712050770
+        self.panel_message_id = None
+        self.post_panel.start()
 
-    @app_commands.command(name="panel", description="Show the Sparta activity panel.")
-    async def panel(self, interaction: discord.Interaction):
-        description = (
-            "Hello to Sparta panel! Here you can ask and look for whatever you need:\n\n"
-            "**Crafting**\n**Maging**\n**Hunting**\n**Dropping**\n**Perco Attack**\n**Frigost 3 Passage**\n\n"
-            "Just click below on whatever suits you and what you are looking for."
+    def cog_unload(self):
+        self.post_panel.cancel()
+
+    @tasks.loop(minutes=10)
+    async def post_panel(self):
+        await self.bot.wait_until_ready()
+        guild = self.bot.get_guild(self.guild_id)
+        if guild:
+            channel = guild.get_channel(self.channel_id)
+            if channel:
+                if self.panel_message_id:
+                    try:
+                        old_message = await channel.fetch_message(self.panel_message_id)
+                        await old_message.delete()
+                    except discord.NotFound:
+                        pass
+
+                description = (
+                    "Welcome to the Sparta activity panel! Here you can ask and look for whatever you need:\n\n"
+                    "**PVM**\n**Quest**\n**Farming**\n\n"
+                    "Just click below on whatever suits you and what you are looking for."
+                )
+
+                # Path to the image (you need to update this with the actual path)
+                image_path = "panel support.png"
+
+                # Create an embed with the description and image
+                embed = discord.Embed(description=description, color=discord.Color.blue())
+                embed.set_image(url=f"attachment://{image_path.split('/')[-1]}")
+
+                # Create buttons for each activity
+                buttons = [
+                    discord.ui.Button(label='PVM', custom_id='PVM', style=discord.ButtonStyle.primary),
+                    discord.ui.Button(label='Quest', custom_id='Quest', style=discord.ButtonStyle.secondary),
+                    discord.ui.Button(label='Farming', custom_id='Farming', style=discord.ButtonStyle.success)
+                ]
+
+                async def button_callback(interaction: discord.Interaction):
+                    activity = interaction.data['custom_id']
+                    options = []
+
+                    if activity == 'PVM':
+                        options = [
+                            discord.SelectOption(label='Frigost 1', value='Frigost 1'),
+                            discord.SelectOption(label='Frigost 2', value='Frigost 2'),
+                            discord.SelectOption(label='Frigost 3', value='Frigost 3'),
+                            discord.SelectOption(label='Pandala', value='Pandala'),
+                            discord.SelectOption(label='Other Zones', value='Other Zones')
+                        ]
+
+                    if options:
+                        select = discord.ui.Select(placeholder="Choose a sub-activity", options=options)
+                        select.callback = await self.create_temp_channel_callback(activity, select, interaction)
+                        view = discord.ui.View()
+                        view.add_item(select)
+                        await interaction.response.send_message(view=view, ephemeral=True)
+                    else:
+                        await self.create_temp_channel(activity, interaction)
+
+                for button in buttons:
+                    button.callback = button_callback
+
+                view = discord.ui.View()
+                for button in buttons:
+                    view.add_item(button)
+
+                message = await channel.send(
+                    embed=embed,
+                    view=view,
+                    file=discord.File(image_path)
+                )
+                self.panel_message_id = message.id
+
+    async def create_temp_channel_callback(self, activity, select, interaction):
+        async def callback(select_interaction):
+            sub_activity = select_interaction.data['values'][0]
+            await self.create_temp_channel(sub_activity, select_interaction)
+            await select_interaction.response.send_message(f"Temporary channel created for {sub_activity}", ephemeral=True)
+
+        return callback
+
+    async def create_temp_channel(self, activity, interaction):
+        guild = interaction.guild
+        category = discord.utils.get(guild.categories, name="Temporary Channels")
+        if category is None:
+            category = await guild.create_category("Temporary Channels")
+
+        # Create a temporary channel for the activity
+        temp_channel = await guild.create_text_channel(
+            name=f"{activity}-{interaction.user.display_name}",
+            category=category
         )
 
-        # Path to the image (you need to update this with the actual path)
-        image_path = "panel support.png"
+        # Mention the references in the new channel
+        references = REFERENCES.get(activity, [])
+        mentions = " ".join([f"<@{ref_id}>" for ref_id in references])
+        await temp_channel.send(f"{interaction.user.mention}, you have been referred to: {mentions}")
 
-        # Create an embed with the description and image
-        embed = discord.Embed(description=description, color=discord.Color.blue())
-        embed.set_image(url=f"attachment://{image_path.split('/')[-1]}")
-
-        # Create buttons for each activity
-        buttons = [
-            discord.ui.Button(label='Crafting', custom_id='Crafting', style=discord.ButtonStyle.primary),
-            discord.ui.Button(label='Maging', custom_id='Maging', style=discord.ButtonStyle.secondary),
-            discord.ui.Button(label='Hunting', custom_id='Hunting', style=discord.ButtonStyle.success),
-            discord.ui.Button(label='Dropping', custom_id='Dropping', style=discord.ButtonStyle.danger),
-            discord.ui.Button(label='Perco Attack', custom_id='Perco Attack', style=discord.ButtonStyle.primary),
-            discord.ui.Button(label='Frigost 3 Passage', custom_id='Frigost 3 Passage', style=discord.ButtonStyle.secondary)
-        ]
-
-        async def button_callback(interaction: discord.Interaction):
-            activity = interaction.data['custom_id']
-            category = discord.utils.get(interaction.guild.categories, name="Temporary Channels")
-            if category is None:
-                category = await interaction.guild.create_category("Temporary Channels")
-
-            # Create a temporary channel for the activity
-            temp_channel = await interaction.guild.create_text_channel(
-                name=f"{activity}-{interaction.user.display_name}",
-                category=category
-            )
-
-            # Mention the references in the new channel
-            references = REFERENCES[activity]
-            mentions = " ".join([f"<@{ref_id}>" for ref_id in references])
-            await temp_channel.send(f"{interaction.user.mention}, you have been referred to: {mentions}")
-
-            await interaction.response.send_message(f"Temporary channel created: {temp_channel.mention}", ephemeral=True)
-
-        for button in buttons:
-            button.callback = button_callback
-
-        view = discord.ui.View()
-        for button in buttons:
-            view.add_item(button)
-
-        await interaction.response.send_message(
-            embed=embed,
-            view=view,
-            ephemeral=False,
-            file=discord.File(image_path)
-        )
+        await interaction.followup.send(f"Temporary channel created: {temp_channel.mention}", ephemeral=True)
 
     @app_commands.command(name="close", description="Close the temporary channel.")
     async def close(self, interaction: discord.Interaction):
