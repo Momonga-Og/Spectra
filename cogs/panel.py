@@ -31,28 +31,40 @@ REFERENCES = {
 class ActivityPanel(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.guild_id = 1214430768143671377
+        self.channel_id = 1264143564712050770
+        self.panel_message_id = None
+        self.post_panel.start()
 
-    @app_commands.command(name="panel", description="Show the Sparta activity panel.")
-    async def panel(self, interaction: discord.Interaction):
-        description = (
-            "Welcome to the Sparta panel! Here you can ask for assistance with various activities:\n\n"
-            "**PVM**\n**Quest**\n**Farming**\n**Mage**\n\n"
-            "Click on the button below for the activity you need help with."
-        )
+    def cog_unload(self):
+        self.post_panel.cancel()
 
-        # Path to the image (you need to update this with the actual path)
-        image_path = "panel_support.png"
+    @tasks.loop(minutes=10)
+    async def post_panel(self):
+        await self.bot.wait_until_ready()
+        guild = self.bot.get_guild(self.guild_id)
+        if guild:
+            channel = guild.get_channel(self.channel_id)
+            if channel:
+                if self.panel_message_id:
+                    try:
+                        old_message = await channel.fetch_message(self.panel_message_id)
+                        await old_message.delete()
+                    except discord.NotFound:
+                        pass
 
-        # Create an embed with the description and image
-        embed = discord.Embed(
-            title="Sparta Activity Panel",
-            description=description,
-            color=discord.Color.blue()
-        )
+                description = (
+                    "Welcome to the Sparta activity panel! Here you can ask and look for whatever you need:\n\n"
+                    "**PVM**\n**Quest**\n**Farming**\n\n"
+                    "Just click below on whatever suits you and what you are looking for."
+                )
 
-        # Check if the image file exists
-        if os.path.exists(image_path):
-            embed.set_image(url=f"attachment://{image_path.split('/')[-1]}")
+                # Path to the image (you need to update this with the actual path)
+                image_path = "panel support.png"
+
+                # Create an embed with the description and image
+                embed = discord.Embed(description=description, color=discord.Color.blue())
+                embed.set_image(url=f"attachment://{image_path.split('/')[-1]}")
 
         # Create buttons for each activity
         buttons = [
