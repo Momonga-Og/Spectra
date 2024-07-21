@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+import os
 
 # Define references for each activity
 REFERENCES = {
@@ -48,7 +49,10 @@ class ActivityPanel(commands.Cog):
             description=description,
             color=discord.Color.blue()
         )
-        embed.set_image(url=f"attachment://{image_path.split('/')[-1]}")
+
+        # Check if the image file exists
+        if os.path.exists(image_path):
+            embed.set_image(url=f"attachment://{image_path.split('/')[-1]}")
 
         # Create buttons for each activity
         buttons = [
@@ -95,11 +99,17 @@ class ActivityPanel(commands.Cog):
                 await message.delete()
 
         # Send the new panel message
-        await channel.send(
-            embed=embed,
-            view=view,
-            file=discord.File(image_path)
-        )
+        if os.path.exists(image_path):
+            await channel.send(
+                embed=embed,
+                view=view,
+                file=discord.File(image_path)
+            )
+        else:
+            await channel.send(
+                embed=embed,
+                view=view
+            )
 
     async def create_temp_channel(self, activity, interaction, references):
         category = discord.utils.get(interaction.guild.categories, name="Temporary Channels")
