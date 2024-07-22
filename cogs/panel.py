@@ -125,6 +125,7 @@ class ActivityPanel(commands.Cog):
                         await interaction.response.send_message(view=view, ephemeral=True)
                     else:
                         await self.create_temp_channel(activity, interaction)
+                        await interaction.response.send_message(f"Temporary channel created for {activity}", ephemeral=True)
 
                 for button in buttons:
                     button.callback = button_callback
