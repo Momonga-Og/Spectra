@@ -119,7 +119,7 @@ class ActivityPanel(commands.Cog):
 
                     if options:
                         select = discord.ui.Select(placeholder="Choose a sub-activity", options=options)
-                        select.callback = await self.create_temp_channel_callback(activity, select, interaction)
+                        select.callback = self.create_temp_channel_callback(activity, select, interaction)
                         view = discord.ui.View()
                         view.add_item(select)
                         await interaction.response.send_message(view=view, ephemeral=True)
@@ -147,7 +147,7 @@ class ActivityPanel(commands.Cog):
 
                 self.panel_message_id = message.id
 
-    async def create_temp_channel_callback(self, activity, select, interaction):
+    def create_temp_channel_callback(self, activity, select, interaction):
         async def callback(select_interaction):
             sub_activity = select_interaction.data['values'][0]
             await self.create_temp_channel(sub_activity, interaction)
