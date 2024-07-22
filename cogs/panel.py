@@ -3,6 +3,7 @@ from discord.ext import commands, tasks
 from discord import app_commands
 from datetime import datetime, timedelta
 import asyncio
+import os
 
 # Define references for each activity
 REFERENCES = {
@@ -79,6 +80,7 @@ class ActivityPanel(commands.Cog):
                 async def button_callback(interaction: discord.Interaction):
                     user_id = interaction.user.id
 
+                    # Check if user is banned
                     if user_id in banned_users and banned_users[user_id] > datetime.now():
                         ban_time_left = banned_users[user_id] - datetime.now()
                         await interaction.response.send_message(
@@ -87,6 +89,7 @@ class ActivityPanel(commands.Cog):
                         )
                         return
 
+                    # Check if user has used the panel in the last 24 hours
                     if user_id in panel_usage and panel_usage[user_id] > datetime.now() - timedelta(days=1):
                         await interaction.response.send_message(
                             "You can only use the panel once every 24 hours.",
@@ -94,6 +97,7 @@ class ActivityPanel(commands.Cog):
                         )
                         return
 
+                    # Check if user has an open ticket
                     if user_id in open_tickets:
                         await interaction.response.send_message(
                             "You already have an open ticket. Please close it before opening a new one.",
