@@ -3,7 +3,6 @@ from discord.ext import commands, tasks
 from discord import app_commands
 from datetime import datetime, timedelta
 import asyncio
-import os
 
 # Define references for each activity
 REFERENCES = {
@@ -15,6 +14,11 @@ REFERENCES = {
     'Quest': ['1205679923440656384', '998156191828029441', '449753564437413888'],
     'Farming': ['960346191734931558', '998156191828029441', '966513865343004712', '1253198915600388217', '977510118495232030', '449753564437413888', '1129171675540361218', '486652069831376943', '1205679923440656384']
 }
+
+# Track panel usage and open tickets
+panel_usage = {}
+open_tickets = {}
+banned_users = {}
 
 class ActivityPanel(commands.Cog):
     def __init__(self, bot):
@@ -42,16 +46,25 @@ class ActivityPanel(commands.Cog):
                         pass
 
                 description = (
-                    "Welcome to the Sparta activity panel! Here you can ask and look for whatever you need:\n\n"
+                    "Welcome to the Sparta activity panel! Here you can ask for assistance with various activities:\n\n"
                     "**PVM**\n**Quest**\n**Farming**\n**Mage**\n\n"
-                    "Just click below on whatever suits you and what you are looking for."
+                    "Click on the button below for the activity you need help with."
+                    "\n\nأهلاً بك في لوحة أنشطة سبارتا! هنا يمكنك طلب المساعدة في مختلف الأنشطة:\n\n"
+                    "**PVM**\n**Quest**\n**Farming**\n**Mage**\n\n"
+                    "انقر على الزر أدناه للنشاط الذي تحتاج المساعدة فيه."
                 )
 
                 # Path to the image (you need to update this with the actual path)
                 image_path = "panel_support.png"
 
                 # Create an embed with the description and image
-                embed = discord.Embed(description=description, color=discord.Color.blue())
+                embed = discord.Embed(
+                    title="Sparta Activity Panel",
+                    description=description,
+                    color=discord.Color.blue()
+                )
+
+                # Check if the image file exists
                 if os.path.exists(image_path):
                     embed.set_image(url=f"attachment://{image_path.split('/')[-1]}")
 
@@ -64,6 +77,30 @@ class ActivityPanel(commands.Cog):
                 ]
 
                 async def button_callback(interaction: discord.Interaction):
+                    user_id = interaction.user.id
+
+                    if user_id in banned_users and banned_users[user_id] > datetime.now():
+                        ban_time_left = banned_users[user_id] - datetime.now()
+                        await interaction.response.send_message(
+                            f"You are banned from using the panel for {ban_time_left.days} days, {ban_time_left.seconds // 3600} hours.",
+                            ephemeral=True
+                        )
+                        return
+
+                    if user_id in panel_usage and panel_usage[user_id] > datetime.now() - timedelta(days=1):
+                        await interaction.response.send_message(
+                            "You can only use the panel once every 24 hours.",
+                            ephemeral=True
+                        )
+                        return
+
+                    if user_id in open_tickets:
+                        await interaction.response.send_message(
+                            "You already have an open ticket. Please close it before opening a new one.",
+                            ephemeral=True
+                        )
+                        return
+
                     activity = interaction.data['custom_id']
                     options = []
 
@@ -74,21 +111,6 @@ class ActivityPanel(commands.Cog):
                             discord.SelectOption(label='Frigost 3', value='Frigost 3'),
                             discord.SelectOption(label='Pandala', value='Pandala'),
                             discord.SelectOption(label='Other Zones', value='Other Zones')
-                        ]
-                    elif activity == 'Farming':
-                        options = [
-                            discord.SelectOption(label='Legendary Weapons', value='Legendary Weapons'),
-                            discord.SelectOption(label='Dofuses', value='Dofuses'),
-                            discord.SelectOption(label='Expensive Resources', value='Expensive Resources')
-                        ]
-                    elif activity == 'Mage':
-                        options = [
-                            discord.SelectOption(label='EXO PA', value='EXO PA : Referred user is 1079826155751866429'),
-                            discord.SelectOption(label='EXO PM', value='EXO PM : Referred user is 1079826155751866429'),
-                            discord.SelectOption(label='EXO Summ', value='EXO Summ : Referred user is 1079826155751866429'),
-                            discord.SelectOption(label='EXO Range', value='EXO Range : Referred user is 1079826155751866429'),
-                            discord.SelectOption(label='EXO Resi', value='EXO Resi : Referred user is 1129171675540361218'),
-                            discord.SelectOption(label='Perfect Stats', value='Perfect Stats : Referred user is 1129171675540361218')
                         ]
 
                     if options:
@@ -118,6 +140,7 @@ class ActivityPanel(commands.Cog):
                         embed=embed,
                         view=view
                     )
+
                 self.panel_message_id = message.id
 
     async def create_temp_channel_callback(self, activity, select, interaction):
@@ -129,6 +152,7 @@ class ActivityPanel(commands.Cog):
         return callback
 
     async def create_temp_channel(self, activity, interaction):
+        user_id = interaction.user.id
         guild = interaction.guild
         category = discord.utils.get(guild.categories, name="Temporary Channels")
         if category is None:
@@ -140,16 +164,48 @@ class ActivityPanel(commands.Cog):
             category=category
         )
 
-        # Mention the references in the new channel
+        # Refer the user to one reference at a time
         references = REFERENCES.get(activity, [])
-        mentions = " ".join([f"<@{ref_id}>" for ref_id in references])
-        await temp_channel.send(f"{interaction.user.mention}, you have been referred to: {mentions}\n\nHere you can contact the referred user for what you are looking for. Please write what you are asking for with details and be patient until the referred user sees your message. No need to create another request.")
+        referred_user = references[0] if references else None
+        mentions = f"<@{referred_user}>" if referred_user else "No references available."
+
+        description = (
+            "Here you can contact the referred user for assistance with your request.\n"
+            "Please provide detailed information about what you need help with and be patient until they respond. "
+            "Avoid creating multiple requests."
+            "\n\nيمكنك هنا التواصل مع المستخدم المرجعي للحصول على المساعدة بخصوص طلبك.\n"
+            "يرجى تقديم معلومات مفصلة حول ما تحتاجه وانتظر حتى يتم الرد عليك. "
+            "تجنب إنشاء طلبات متعددة."
+        )
+
+        await temp_channel.send(
+            f"{interaction.user.mention}, you have been referred to: {mentions}\n\n{description}"
+        )
+
+        panel_usage[user_id] = datetime.now()
+        open_tickets[user_id] = temp_channel.id
 
         await interaction.followup.send(f"Temporary channel created: {temp_channel.mention}", ephemeral=True)
 
+        await self.check_user_response(temp_channel, user_id)
+
+    async def check_user_response(self, channel, user_id):
+        def check(m):
+            return m.channel == channel and m.author.id == user_id
+
+        try:
+            await self.bot.wait_for('message', check=check, timeout=4 * 3600)  # 4 hours
+        except asyncio.TimeoutError:
+            banned_users[user_id] = datetime.now() + timedelta(days=10)
+            await channel.send(f"{channel.guild.get_member(user_id).mention} has been banned from using the panel for 10 days due to inactivity.")
+
     @app_commands.command(name="close", description="Close the temporary channel.")
     async def close(self, interaction: discord.Interaction):
+        user_id = interaction.user.id
+
         if isinstance(interaction.channel.category, discord.CategoryChannel) and interaction.channel.category.name == "Temporary Channels":
+            if user_id in open_tickets and open_tickets[user_id] == interaction.channel.id:
+                del open_tickets[user_id]
             await interaction.channel.delete()
             await interaction.response.send_message("Channel closed.", ephemeral=True)
         else:
