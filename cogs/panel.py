@@ -152,43 +152,46 @@ class ActivityPanel(commands.Cog):
 
         return callback
 
-    async def create_temp_channel(self, activity, interaction):
-        user_id = interaction.user.id
-        guild = interaction.guild
-        category = discord.utils.get(guild.categories, name="Temporary Channels")
-        if category is None:
-            category = await guild.create_category("Temporary Channels")
+async def create_temp_channel(self, activity, interaction):
+    user_id = interaction.user.id
+    guild = interaction.guild
+    category = discord.utils.get(guild.categories, name="Temporary Channels")
+    if category is None:
+        category = await guild.create_category("Temporary Channels")
 
-        # Create a temporary channel for the activity
-        temp_channel = await guild.create_text_channel(
-            name=f"{activity}-{interaction.user.display_name}",
-            category=category
-        )
+    # Create a temporary channel for the activity
+    temp_channel = await guild.create_text_channel(
+        name=f"{activity}-{interaction.user.display_name}",
+        category=category
+    )
 
-        # Refer the user to one reference at a time
-        references = REFERENCES.get(activity, [])
-        referred_user = references[0] if references else None
-        mentions = f"<@{referred_user}>" if referred_user else "No references available."
+    # Refer the user to one reference at a time
+    references = REFERENCES.get(activity, [])
+    referred_user = references[0] if references else None
+    mentions = f"<@{referred_user}>" if referred_user else "No references available."
 
-        description = (
-            "Here you can contact the referred user for assistance with your request.\n"
-            "Please provide detailed information about what you need help with and be patient until they respond. "
-            "Avoid creating multiple requests."
-            "\n\nيمكنك هنا التواصل مع المستخدم المرجعي للحصول على المساعدة بخصوص طلبك.\n"
-            "يرجى تقديم معلومات مفصلة حول ما تحتاجه وانتظر حتى يتم الرد عليك. "
-            "تجنب إنشاء طلبات متعددة."
-        )
+    description = (
+        "Here you can contact the referred user for assistance with your request.\n"
+        "Please provide detailed information about what you need help with and be patient until they respond. "
+        "Avoid creating multiple requests."
+        "\n\nيمكنك هنا التواصل مع المستخدم المرجعي للحصول على المساعدة بخصوص طلبك.\n"
+        "يرجى تقديم معلومات مفصلة حول ما تحتاجه وانتظر حتى يتم الرد عليك. "
+        "تجنب إنشاء طلبات متعددة."
+    )
 
-        await temp_channel.send(
-            f"{interaction.user.mention}, you have been referred to: {mentions}\n\n{description}"
-        )
+    await temp_channel.send(
+        f"{interaction.user.mention}, you have been referred to: {mentions}\n\n{description}"
+    )
 
-        panel_usage[user_id] = datetime.now()
-        open_tickets[user_id] = temp_channel.id
+    panel_usage[user_id] = datetime.now()
+    open_tickets[user_id] = temp_channel.id
 
+    try:
         await interaction.followup.send(f"Temporary channel created: {temp_channel.mention}", ephemeral=True)
+    except discord.errors.NotFound:
+        await temp_channel.send(f"Temporary channel created: {temp_channel.mention} (Could not send follow-up message via webhook)", ephemeral=True)
 
-        await self.check_user_response(temp_channel, user_id)
+    await self.check_user_response(temp_channel, user_id)
 
     async def check_user_response(self, channel, user_id):
         def check(m):
