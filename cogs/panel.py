@@ -1,6 +1,9 @@
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
+from datetime import datetime, timedelta
+import asyncio
+import os
 
 # Define references for each activity
 REFERENCES = {
@@ -40,22 +43,24 @@ class ActivityPanel(commands.Cog):
 
                 description = (
                     "Welcome to the Sparta activity panel! Here you can ask and look for whatever you need:\n\n"
-                    "**PVM**\n**Quest**\n**Farming**\n\n"
+                    "**PVM**\n**Quest**\n**Farming**\n**Mage**\n\n"
                     "Just click below on whatever suits you and what you are looking for."
                 )
 
                 # Path to the image (you need to update this with the actual path)
-                image_path = "panel support.png"
+                image_path = "panel_support.png"
 
                 # Create an embed with the description and image
                 embed = discord.Embed(description=description, color=discord.Color.blue())
-                embed.set_image(url=f"attachment://{image_path.split('/')[-1]}")
+                if os.path.exists(image_path):
+                    embed.set_image(url=f"attachment://{image_path.split('/')[-1]}")
 
                 # Create buttons for each activity
                 buttons = [
                     discord.ui.Button(label='PVM', custom_id='PVM', style=discord.ButtonStyle.primary),
                     discord.ui.Button(label='Quest', custom_id='Quest', style=discord.ButtonStyle.secondary),
-                    discord.ui.Button(label='Farming', custom_id='Farming', style=discord.ButtonStyle.success)
+                    discord.ui.Button(label='Farming', custom_id='Farming', style=discord.ButtonStyle.success),
+                    discord.ui.Button(label='Mage', custom_id='Mage', style=discord.ButtonStyle.danger)
                 ]
 
                 async def button_callback(interaction: discord.Interaction):
@@ -69,6 +74,21 @@ class ActivityPanel(commands.Cog):
                             discord.SelectOption(label='Frigost 3', value='Frigost 3'),
                             discord.SelectOption(label='Pandala', value='Pandala'),
                             discord.SelectOption(label='Other Zones', value='Other Zones')
+                        ]
+                    elif activity == 'Farming':
+                        options = [
+                            discord.SelectOption(label='Legendary Weapons', value='Legendary Weapons'),
+                            discord.SelectOption(label='Dofuses', value='Dofuses'),
+                            discord.SelectOption(label='Expensive Resources', value='Expensive Resources')
+                        ]
+                    elif activity == 'Mage':
+                        options = [
+                            discord.SelectOption(label='EXO PA', value='EXO PA : Referred user is 1079826155751866429'),
+                            discord.SelectOption(label='EXO PM', value='EXO PM : Referred user is 1079826155751866429'),
+                            discord.SelectOption(label='EXO Summ', value='EXO Summ : Referred user is 1079826155751866429'),
+                            discord.SelectOption(label='EXO Range', value='EXO Range : Referred user is 1079826155751866429'),
+                            discord.SelectOption(label='EXO Resi', value='EXO Resi : Referred user is 1129171675540361218'),
+                            discord.SelectOption(label='Perfect Stats', value='Perfect Stats : Referred user is 1129171675540361218')
                         ]
 
                     if options:
@@ -87,11 +107,17 @@ class ActivityPanel(commands.Cog):
                 for button in buttons:
                     view.add_item(button)
 
-                message = await channel.send(
-                    embed=embed,
-                    view=view,
-                    file=discord.File(image_path)
-                )
+                if os.path.exists(image_path):
+                    message = await channel.send(
+                        embed=embed,
+                        view=view,
+                        file=discord.File(image_path)
+                    )
+                else:
+                    message = await channel.send(
+                        embed=embed,
+                        view=view
+                    )
                 self.panel_message_id = message.id
 
     async def create_temp_channel_callback(self, activity, select, interaction):
@@ -117,7 +143,7 @@ class ActivityPanel(commands.Cog):
         # Mention the references in the new channel
         references = REFERENCES.get(activity, [])
         mentions = " ".join([f"<@{ref_id}>" for ref_id in references])
-        await temp_channel.send(f"{interaction.user.mention}, you have been referred to: {mentions}")
+        await temp_channel.send(f"{interaction.user.mention}, you have been referred to: {mentions}\n\nHere you can contact the referred user for what you are looking for. Please write what you are asking for with details and be patient until the referred user sees your message. No need to create another request.")
 
         await interaction.followup.send(f"Temporary channel created: {temp_channel.mention}", ephemeral=True)
 
