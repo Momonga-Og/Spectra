@@ -3,6 +3,7 @@ from discord.ext import commands, tasks
 from discord import app_commands
 from datetime import datetime, timedelta
 import asyncio
+import os
 
 # Define references for each activity
 REFERENCES = {
