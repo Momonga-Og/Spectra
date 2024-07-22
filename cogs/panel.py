@@ -124,8 +124,9 @@ class ActivityPanel(commands.Cog):
                         view.add_item(select)
                         await interaction.response.send_message(view=view, ephemeral=True)
                     else:
+                        await interaction.response.defer(ephemeral=True)
                         await self.create_temp_channel(activity, interaction)
-                        await interaction.response.send_message(f"Temporary channel created for {activity}", ephemeral=True)
+                        await interaction.followup.send(f"Temporary channel created for {activity}", ephemeral=True)
 
                 for button in buttons:
                     button.callback = button_callback
@@ -150,9 +151,10 @@ class ActivityPanel(commands.Cog):
 
     def create_temp_channel_callback(self, activity, select, interaction):
         async def callback(select_interaction):
+            await select_interaction.response.defer(ephemeral=True)
             sub_activity = select_interaction.data['values'][0]
-            await self.create_temp_channel(sub_activity, interaction)
-            await select_interaction.response.send_message(f"Temporary channel created for {sub_activity}", ephemeral=True)
+            await self.create_temp_channel(sub_activity, select_interaction)
+            await select_interaction.followup.send(f"Temporary channel created for {sub_activity}", ephemeral=True)
 
         return callback
 
@@ -189,8 +191,6 @@ class ActivityPanel(commands.Cog):
 
         panel_usage[user_id] = datetime.now()
         open_tickets[user_id] = temp_channel.id
-
-        await interaction.followup.send(f"Temporary channel created: {temp_channel.mention}", ephemeral=True)
 
         await self.check_user_response(temp_channel, user_id)
 
