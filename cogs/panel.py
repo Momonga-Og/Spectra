@@ -13,7 +13,13 @@ REFERENCES = {
     'Pandala': ['998156191828029441', '966513865343004712', '449753564437413888', '1056141573580148776', '1129171675540361218', '422092705602994186', '876507383411666965'],
     'Other Zones': ['1205679923440656384', '1056141573580148776', '1129171675540361218', '486652069831376943'],
     'Quest': ['1205679923440656384', '998156191828029441', '449753564437413888'],
-    'Farming': ['960346191734931558', '998156191828029441', '966513865343004712', '1253198915600388217', '977510118495232030', '449753564437413888', '1129171675540361218', '486652069831376943', '1205679923440656384']
+    'Farming': ['960346191734931558', '998156191828029441', '966513865343004712', '1253198915600388217', '977510118495232030', '449753564437413888', '1129171675540361218', '486652069831376943', '1205679923440656384'],
+    'EXO PA': ['1079826155751866429'],
+    'EXO PM': ['1079826155751866429'],
+    'EXO Summ': ['1079826155751866429'],
+    'EXO Range': ['1079826155751866429'],
+    'EXO Resi': ['1129171675540361218'],
+    'Perfect Stats': ['1129171675540361218']
 }
 
 class ActivityPanel(commands.Cog):
@@ -83,19 +89,25 @@ class ActivityPanel(commands.Cog):
                         ]
                     elif activity == 'Mage':
                         options = [
-                            discord.SelectOption(label='EXO PA', value='EXO PA : Referred user is 1079826155751866429'),
-                            discord.SelectOption(label='EXO PM', value='EXO PM : Referred user is 1079826155751866429'),
-                            discord.SelectOption(label='EXO Summ', value='EXO Summ : Referred user is 1079826155751866429'),
-                            discord.SelectOption(label='EXO Range', value='EXO Range : Referred user is 1079826155751866429'),
-                            discord.SelectOption(label='EXO Resi', value='EXO Resi : Referred user is 1129171675540361218'),
-                            discord.SelectOption(label='Perfect Stats', value='Perfect Stats : Referred user is 1129171675540361218')
+                            discord.SelectOption(label='EXO PA', value='EXO PA'),
+                            discord.SelectOption(label='EXO PM', value='EXO PM'),
+                            discord.SelectOption(label='EXO Summ', value='EXO Summ'),
+                            discord.SelectOption(label='EXO Range', value='EXO Range'),
+                            discord.SelectOption(label='EXO Resi', value='EXO Resi'),
+                            discord.SelectOption(label='Perfect Stats', value='Perfect Stats')
                         ]
 
                     if options:
                         select = discord.ui.Select(placeholder="Choose a sub-activity", options=options)
-                        select.callback = await self.create_temp_channel_callback(activity, select, interaction)
                         view = discord.ui.View()
                         view.add_item(select)
+
+                        async def select_callback(select_interaction: discord.Interaction):
+                            sub_activity = select_interaction.data['values'][0]
+                            await self.create_temp_channel(sub_activity, select_interaction)
+                            await select_interaction.response.send_message(f"Temporary channel created for {sub_activity}", ephemeral=True)
+
+                        select.callback = select_callback
                         await interaction.response.send_message(view=view, ephemeral=True)
                     else:
                         await self.create_temp_channel(activity, interaction)
@@ -119,14 +131,6 @@ class ActivityPanel(commands.Cog):
                         view=view
                     )
                 self.panel_message_id = message.id
-
-    async def create_temp_channel_callback(self, activity, select, interaction):
-        async def callback(select_interaction):
-            sub_activity = select_interaction.data['values'][0]
-            await self.create_temp_channel(sub_activity, select_interaction)
-            await select_interaction.response.send_message(f"Temporary channel created for {sub_activity}", ephemeral=True)
-
-        return callback
 
     async def create_temp_channel(self, activity, interaction):
         guild = interaction.guild
