@@ -70,6 +70,7 @@ class ActivityPanel(commands.Cog):
                 ]
 
                 async def button_callback(interaction: discord.Interaction):
+                    await interaction.response.defer(ephemeral=True)  # Defer the interaction
                     activity = interaction.data['custom_id']
                     options = []
 
@@ -103,14 +104,16 @@ class ActivityPanel(commands.Cog):
                         view.add_item(select)
 
                         async def select_callback(select_interaction: discord.Interaction):
+                            await select_interaction.response.defer(ephemeral=True)  # Defer the interaction
                             sub_activity = select_interaction.data['values'][0]
                             await self.create_temp_channel(sub_activity, select_interaction)
-                            await select_interaction.response.send_message(f"Temporary channel created for {sub_activity}", ephemeral=True)
+                            await select_interaction.followup.send(f"Temporary channel created for {sub_activity}", ephemeral=True)
 
                         select.callback = select_callback
-                        await interaction.response.send_message(view=view, ephemeral=True)
+                        await interaction.followup.send(view=view, ephemeral=True)
                     else:
                         await self.create_temp_channel(activity, interaction)
+                        await interaction.followup.send(f"Temporary channel created for {activity}", ephemeral=True)
 
                 for button in buttons:
                     button.callback = button_callback
