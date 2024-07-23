@@ -113,7 +113,6 @@ class ActivityPanel(commands.Cog):
                         await interaction.followup.send(view=view, ephemeral=True)
                     else:
                         await self.create_temp_channel(activity, interaction)
-                        await interaction.followup.send(f"Temporary channel created for {activity}", ephemeral=True)
 
                 for button in buttons:
                     button.callback = button_callback
