@@ -51,7 +51,7 @@ class Voice(commands.Cog):
 
                     if vc and vc.is_connected():
                         audio_file = f'{member.name}_welcome.mp3'
-                        welcome_text = f'Welcome to the voice channel, {member.name}!'
+                        welcome_text = f'Delighted to see you in the voice chat channel, {member.name}!'
                         self.text_to_speech(welcome_text, audio_file)
 
                         # Ensure we're not already playing something
