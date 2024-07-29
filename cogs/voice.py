@@ -4,6 +4,7 @@ from gtts import gTTS
 import os
 import asyncio
 import logging
+import random
 
 logging.basicConfig(level=logging.INFO)
 
@@ -11,6 +12,18 @@ class Voice(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.blocked_users = {}
+        self.welcome_messages = [
+            "Hello there! Glad you could join us, {name}!",
+            "Welcome, {name}! We hope you have a great time!",
+            "Hi {name}! Nice to see you here!",
+            "Hey {name}! Welcome to the voice chat!",
+            "Greetings, {name}! Enjoy your stay!",
+            "What's up, {name}? Welcome aboard!",
+            "Good to see you, {name}! Have fun!",
+            "Hey {name}! Let's have a great time together!",
+            "Welcome {name}! We're glad you're here!",
+            "Hello {name}! Delighted to see you in the voice chat channel!"
+        ]
 
     def text_to_speech(self, text, filename):
         tts = gTTS(text)
@@ -51,7 +64,7 @@ class Voice(commands.Cog):
 
                     if vc and vc.is_connected():
                         audio_file = f'{member.name}_welcome.mp3'
-                        welcome_text = f'Delighted to see you in the voice chat channel, {member.name}!'
+                        welcome_text = random.choice(self.welcome_messages).format(name=member.name)
                         self.text_to_speech(welcome_text, audio_file)
 
                         # Ensure we're not already playing something
