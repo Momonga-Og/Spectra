@@ -4,7 +4,6 @@ pynacl  # Required for Discord voice functionalities
 requests
 Pillow
 pytube
-moviepy==1.0.3
 rembg
 pydub
 yt-dlp
