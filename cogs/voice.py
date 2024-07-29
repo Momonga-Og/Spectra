@@ -87,3 +87,15 @@ class Voice(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))
+
+async def main():
+    intents = discord.Intents.default()
+    intents.message_content = True
+    bot = commands.Bot(command_prefix='!', intents=intents)
+
+    bot.load_extension('your_cog_module_name')  # Replace with the actual module name
+
+    await bot.start('your_token_here')  # Replace with your bot token
+
+if __name__ == "__main__":
+    asyncio.run(main())
