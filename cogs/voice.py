@@ -13,51 +13,51 @@ class Voice(commands.Cog):
         self.bot = bot
         self.blocked_users = {}
         self.welcome_messages = [
-            {"text": "Hello there! Glad you could join us, {name}!", "lang": "en"},
-            {"text": "Welcome, {name}! We hope you have a great time!", "lang": "en"},
-            {"text": "Hi {name}! Nice to see you here!", "lang": "en"},
-            {"text": "Hey {name}! Welcome to the voice chat!", "lang": "en"},
-            {"text": "Greetings, {name}! Enjoy your stay!", "lang": "en"},
-            {"text": "What's up, {name}? Welcome aboard!", "lang": "en"},
-            {"text": "Good to see you, {name}! Have fun!", "lang": "en"},
-            {"text": "Hey {name}! Let's have a great time together!", "lang": "en"},
-            {"text": "Welcome {name}! We're glad you're here!", "lang": "en"},
-            {"text": "Hello {name}! Delighted to see you in the voice chat channel!", "lang": "en"},
-            {"text": "Namaste, {name}!", "lang": "hi"},
-            {"text": "Konnichiwa, {name}-san!", "lang": "ja"},
-            {"text": "Marhaba, {name}!", "lang": "ar"},
-            {"text": "Bonjour, {name}!", "lang": "fr"},
-            {"text": "Hola, {name}!", "lang": "es"},
-            {"text": "Ciao, {name}!", "lang": "it"},
-            {"text": "Hallo, {name}!", "lang": "de"},
-            {"text": "Olá, {name}!", "lang": "pt"},
-            {"text": "Privet, {name}!", "lang": "ru"},
-            {"text": "Nǐ hǎo, {name}!", "lang": "zh-cn"},
-            {"text": "Salut, {name}!", "lang": "ro"},
-            {"text": "Sawubona, {name}!", "lang": "zu"},
-            {"text": "Hej, {name}!", "lang": "sv"},
-            {"text": "Selam, {name}!", "lang": "tr"},
-            {"text": "Jambo, {name}!", "lang": "sw"},
-            {"text": "Hej, {name}!", "lang": "da"},
-            {"text": "Tere, {name}!", "lang": "et"},
-            {"text": "Hallo, {name}!", "lang": "nl"},
-            {"text": "Hej, {name}!", "lang": "fi"},
-            {"text": "Aloha, {name}!", "lang": "haw"},
-            {"text": "Shalom, {name}!", "lang": "he"},
-            {"text": "Ndewo, {name}!", "lang": "ig"},
-            {"text": "Saluton, {name}!", "lang": "eo"},
-            {"text": "Sannu, {name}!", "lang": "ha"},
-            {"text": "Sawasdee, {name}!", "lang": "th"},
-            {"text": "Xin chào, {name}!", "lang": "vi"},
-            {"text": "Kamusta, {name}!", "lang": "fil"},
-            {"text": "Ahoj, {name}!", "lang": "cs"},
-            {"text": "Dobrý den, {name}!", "lang": "cs"},
-            {"text": "Sveiki, {name}!", "lang": "lv"},
-            {"text": "Dia dhuit, {name}!", "lang": "ga"}
+            "Hello there! Glad you could join us, {name}!",
+            "Welcome, {name}! We hope you have a great time!",
+            "Hi {name}! Nice to see you here!",
+            "Hey {name}! Welcome to the voice chat!",
+            "Greetings, {name}! Enjoy your stay!",
+            "What's up, {name}? Welcome aboard!",
+            "Good to see you, {name}! Have fun!",
+            "Hey {name}! Let's have a great time together!",
+            "Welcome {name}! We're glad you're here!",
+            "Hello {name}! Delighted to see you in the voice chat channel!",
+            "Hi {name}! Welcome, and enjoy your stay!",
+            "Hey {name}! Great to see you!",
+            "Hi {name}! Welcome to the channel!",
+            "Hello {name}! We're happy to have you here!",
+            "Hey {name}! Thanks for joining us!",
+            "Hi {name}! Welcome and have fun!",
+            "Hey {name}! It's great to see you!",
+            "Hello {name}! Enjoy the chat!",
+            "Hey {name}! We're glad you could join us!",
+            "Hi {name}! Thanks for stopping by!",
+            "Hello {name}! Welcome to our voice chat!",
+            "Hey {name}! It's awesome to have you here!",
+            "Hi {name}! Welcome and let's have some fun!",
+            "Hello {name}! Thanks for joining the chat!",
+            "Hey {name}! It's great to see you here!",
+            "Hi {name}! Welcome to the chat!",
+            "Hello {name}! Glad you could make it!",
+            "Hey {name}! Welcome to our voice chat!",
+            "Hi {name}! It's great to have you here!",
+            "Hello {name}! Enjoy your time with us!",
+            "Hey {name}! Thanks for joining the voice chat!",
+            "Hi {name}! We're happy to see you here!",
+            "Hello {name}! Welcome and have a great time!",
+            "Hey {name}! We're glad to have you with us!",
+            "Hi {name}! Thanks for being here!",
+            "Hello {name}! Enjoy your stay in the chat!",
+            "Hey {name}! It's great to have you join us!",
+            "Hi {name}! Welcome and enjoy the chat!",
+            "Hello {name}! We're thrilled to have you here!",
+            "Hey {name}! Thanks for coming!",
+            "Hi {name}! Welcome and have a great time chatting!"
         ]
 
-    def text_to_speech(self, text, filename, lang="en"):
-        tts = gTTS(text, lang=lang)
+    def text_to_speech(self, text, filename):
+        tts = gTTS(text)
         tts.save(filename)
 
     async def connect_to_channel(self, channel, retries=3, delay=5):
@@ -95,10 +95,8 @@ class Voice(commands.Cog):
 
                     if vc and vc.is_connected():
                         audio_file = f'{member.name}_welcome.mp3'
-                        welcome_message = random.choice(self.welcome_messages)
-                        welcome_text = welcome_message["text"].format(name=member.name)
-                        welcome_lang = welcome_message["lang"]
-                        self.text_to_speech(welcome_text, audio_file, lang=welcome_lang)
+                        welcome_text = random.choice(self.welcome_messages).format(name=member.name)
+                        self.text_to_speech(welcome_text, audio_file)
 
                         # Ensure we're not already playing something
                         if not vc.is_playing():
@@ -139,7 +137,7 @@ async def main():
     intents.message_content = True
     bot = commands.Bot(command_prefix='!', intents=intents)
 
-    await setup(bot)
+    bot.load_extension('your_cog_module_name')  # Replace with the actual module name
 
     await bot.start('your_token_here')  # Replace with your bot token
 
