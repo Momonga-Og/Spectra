@@ -13,20 +13,51 @@ class Voice(commands.Cog):
         self.bot = bot
         self.blocked_users = {}
         self.welcome_messages = [
-            "Hello there! Glad you could join us, {name}!",
-            "Welcome, {name}! We hope you have a great time!",
-            "Hi {name}! Nice to see you here!",
-            "Hey {name}! Welcome to the voice chat!",
-            "Greetings, {name}! Enjoy your stay!",
-            "What's up, {name}? Welcome aboard!",
-            "Good to see you, {name}! Have fun!",
-            "Hey {name}! Let's have a great time together!",
-            "Welcome {name}! We're glad you're here!",
-            "Hello {name}! Delighted to see you in the voice chat channel!"
+            {"text": "Hello there! Glad you could join us, {name}!", "lang": "en"},
+            {"text": "Welcome, {name}! We hope you have a great time!", "lang": "en"},
+            {"text": "Hi {name}! Nice to see you here!", "lang": "en"},
+            {"text": "Hey {name}! Welcome to the voice chat!", "lang": "en"},
+            {"text": "Greetings, {name}! Enjoy your stay!", "lang": "en"},
+            {"text": "What's up, {name}? Welcome aboard!", "lang": "en"},
+            {"text": "Good to see you, {name}! Have fun!", "lang": "en"},
+            {"text": "Hey {name}! Let's have a great time together!", "lang": "en"},
+            {"text": "Welcome {name}! We're glad you're here!", "lang": "en"},
+            {"text": "Hello {name}! Delighted to see you in the voice chat channel!", "lang": "en"},
+            {"text": "Namaste, {name}!", "lang": "hi"},
+            {"text": "Konnichiwa, {name}-san!", "lang": "ja"},
+            {"text": "Marhaba, {name}!", "lang": "ar"},
+            {"text": "Bonjour, {name}!", "lang": "fr"},
+            {"text": "Hola, {name}!", "lang": "es"},
+            {"text": "Ciao, {name}!", "lang": "it"},
+            {"text": "Hallo, {name}!", "lang": "de"},
+            {"text": "Olá, {name}!", "lang": "pt"},
+            {"text": "Privet, {name}!", "lang": "ru"},
+            {"text": "Nǐ hǎo, {name}!", "lang": "zh-cn"},
+            {"text": "Salut, {name}!", "lang": "ro"},
+            {"text": "Sawubona, {name}!", "lang": "zu"},
+            {"text": "Hej, {name}!", "lang": "sv"},
+            {"text": "Selam, {name}!", "lang": "tr"},
+            {"text": "Jambo, {name}!", "lang": "sw"},
+            {"text": "Hej, {name}!", "lang": "da"},
+            {"text": "Tere, {name}!", "lang": "et"},
+            {"text": "Hallo, {name}!", "lang": "nl"},
+            {"text": "Hej, {name}!", "lang": "fi"},
+            {"text": "Aloha, {name}!", "lang": "haw"},
+            {"text": "Shalom, {name}!", "lang": "he"},
+            {"text": "Ndewo, {name}!", "lang": "ig"},
+            {"text": "Saluton, {name}!", "lang": "eo"},
+            {"text": "Sannu, {name}!", "lang": "ha"},
+            {"text": "Sawasdee, {name}!", "lang": "th"},
+            {"text": "Xin chào, {name}!", "lang": "vi"},
+            {"text": "Kamusta, {name}!", "lang": "fil"},
+            {"text": "Ahoj, {name}!", "lang": "cs"},
+            {"text": "Dobrý den, {name}!", "lang": "cs"},
+            {"text": "Sveiki, {name}!", "lang": "lv"},
+            {"text": "Dia dhuit, {name}!", "lang": "ga"}
         ]
 
-    def text_to_speech(self, text, filename):
-        tts = gTTS(text)
+    def text_to_speech(self, text, filename, lang="en"):
+        tts = gTTS(text, lang=lang)
         tts.save(filename)
 
     async def connect_to_channel(self, channel, retries=3, delay=5):
@@ -64,8 +95,10 @@ class Voice(commands.Cog):
 
                     if vc and vc.is_connected():
                         audio_file = f'{member.name}_welcome.mp3'
-                        welcome_text = random.choice(self.welcome_messages).format(name=member.name)
-                        self.text_to_speech(welcome_text, audio_file)
+                        welcome_message = random.choice(self.welcome_messages)
+                        welcome_text = welcome_message["text"].format(name=member.name)
+                        welcome_lang = welcome_message["lang"]
+                        self.text_to_speech(welcome_text, audio_file, lang=welcome_lang)
 
                         # Ensure we're not already playing something
                         if not vc.is_playing():
@@ -106,7 +139,7 @@ async def main():
     intents.message_content = True
     bot = commands.Bot(command_prefix='!', intents=intents)
 
-    bot.load_extension('your_cog_module_name')  # Replace with the actual module name
+    await setup(bot)
 
     await bot.start('your_token_here')  # Replace with your bot token
 
