@@ -9,7 +9,3 @@ pydub
 yt-dlp
 pandas
 openpyxl
-speechrecognition
-pydub
-beautifulsoup4
-requests
