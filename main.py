@@ -58,4 +58,38 @@ async def on_close():
 
 EXTENSIONS = [
     'cogs.general', 'cogs.moderation', 'cogs.poll', 'cogs.admin', 'cogs.voice',
-    'cogs.relocate', 'cogs.watermark', 'cogs.serverstats', 'cogs.talk', 'cogs.write
+    'cogs.relocate', 'cogs.watermark', 'cogs.serverstats', 'cogs.talk', 'cogs.write',
+    'cogs.watermark_user', 'cogs.attack', 'cogs.new_users', 'cogs.role',
+    'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.screenshot',
+    'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession',
+    'cogs.search'  # Adding the new search cog
+]
+
+async def load_extensions():
+    for extension in EXTENSIONS:
+        try:
+            await bot.load_extension(extension)
+            logger.info(f"Loaded extension: {extension}")
+        except Exception as e:
+            logger.exception(f"Failed to load extension {extension}")
+
+async def main():
+    async with bot:
+        await load_extensions()
+        if not TOKEN:
+            logger.error("Bot token not found")
+            return
+        try:
+            await bot.start(TOKEN)
+        except discord.LoginFailure:
+            logger.error("Invalid token")
+        except Exception as e:
+            logger.exception("Failed to start the bot")
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")
+    except Exception as e:
+        logger.exception("Bot encountered an error and stopped")
