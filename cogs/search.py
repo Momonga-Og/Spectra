@@ -85,4 +85,4 @@ class Search(commands.Cog):
                 os.remove(audio_file)
 
 async def setup(bot):
-    bot.add_cog(Search(bot))
+    await bot.add_cog(Search(bot))
