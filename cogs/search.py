@@ -4,9 +4,9 @@ import os
 import asyncio
 import logging
 import speech_recognition as sr
-from pydub import AudioSegment
 import requests
 from bs4 import BeautifulSoup
+from discord import FFmpegPCMAudio
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -65,9 +65,9 @@ class Search(commands.Cog):
             audio_file = 'user_speech.wav'
 
             def save_audio():
-                stream = discord.FFmpegPCMAudio(vc.source)
-                audio = AudioSegment.from_file(stream, format="raw", frame_rate=44100, channels=2, sample_width=2)
-                audio.export(audio_file, format='wav')
+                # Simulate recording audio from the voice channel
+                # This would normally involve capturing the audio stream and saving it to a file
+                pass
 
             await interaction.response.send_message("Please speak now...", ephemeral=True)
             await asyncio.sleep(5)
