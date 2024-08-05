@@ -1,4 +1,5 @@
 import discord
+from discord import app_commands
 from discord.ext import commands
 import asyncio
 import logging
@@ -22,9 +23,6 @@ class VoiceAI(commands.Cog):
             "pitch_shift": self.apply_pitch_shift
         }
 
-    async def cog_before_invoke(self, ctx):
-        ctx.voice_state = self.get_voice_state(ctx.guild.id)
-
     def get_voice_state(self, guild_id):
         state = self.voice_states.get(guild_id)
         if not state:
@@ -47,7 +45,6 @@ class VoiceAI(commands.Cog):
         return fp
 
     def apply_robot_effect(self, audio_fp):
-        # Implement robot voice effect
         audio = AudioSegment.from_file(audio_fp, format="mp3")
         robot_audio = audio.overlay(audio.invert_phase())
         output = BytesIO()
@@ -56,7 +53,6 @@ class VoiceAI(commands.Cog):
         return output
 
     def apply_echo_effect(self, audio_fp):
-        # Implement echo effect
         audio = AudioSegment.from_file(audio_fp, format="mp3")
         echo_audio = audio + audio.overlay(audio.fade_in(1000), position=100)
         output = BytesIO()
@@ -65,7 +61,6 @@ class VoiceAI(commands.Cog):
         return output
 
     def apply_pitch_shift(self, audio_fp):
-        # Implement pitch shift effect
         audio = AudioSegment.from_file(audio_fp, format="mp3")
         shifted = audio._spawn(audio.raw_data, overrides={
             "frame_rate": int(audio.frame_rate * 1.2)
@@ -75,57 +70,87 @@ class VoiceAI(commands.Cog):
         output.seek(0)
         return output
 
-    @commands.command(name='join', invoke_without_subcommand=True)
-    async def _join(self, ctx):
-        destination = ctx.author.voice.channel
-        if ctx.voice_state.voice:
-            await ctx.voice_state.voice.move_to(destination)
-            return
-        ctx.voice_state.voice = await destination.connect()
+    @app_commands.command(name='join', description='Join a voice channel')
+    async def _join(self, interaction: discord.Interaction):
+        if not interaction.user.voice:
+            return await interaction.response.send_message("You're not in a voice channel.")
+        
+        destination = interaction.user.voice.channel
+        voice_state = self.get_voice_state(interaction.guild_id)
 
-    @commands.command(name='speak')
-    async def _speak(self, ctx, *, message):
-        if not ctx.voice_state.voice:
-            await ctx.invoke(self._join)
+        if voice_state.voice:
+            await voice_state.voice.move_to(destination)
+        else:
+            voice_state.voice = await destination.connect()
+
+        await interaction.response.send_message(f"Joined {destination.name}")
+
+    @app_commands.command(name='leave', description='Leave the voice channel')
+    async def _leave(self, interaction: discord.Interaction):
+        voice_state = self.get_voice_state(interaction.guild_id)
+        if not voice_state.voice:
+            return await interaction.response.send_message("Not connected to any voice channel.")
+        
+        await voice_state.stop()
+        del self.voice_states[interaction.guild_id]
+        await interaction.response.send_message("Left the voice channel.")
+
+    @app_commands.command(name='speak', description='Make the bot speak a message')
+    async def _speak(self, interaction: discord.Interaction, message: str):
+        voice_state = self.get_voice_state(interaction.guild_id)
+        if not voice_state.voice:
+            return await interaction.response.send_message("I'm not in a voice channel. Use /join first.")
+        
+        await interaction.response.defer()
         audio_fp = self.text_to_speech(message, effect=random.choice(list(self.audio_effects.keys())))
-        ctx.voice_state.voice.play(discord.FFmpegPCMAudio(audio_fp, pipe=True))
+        voice_state.voice.play(discord.FFmpegPCMAudio(audio_fp, pipe=True))
+        await interaction.followup.send(f"Speaking: {message}")
 
-    @commands.command(name='listen')
-    async def _listen(self, ctx):
-        if not ctx.voice_state.voice:
-            await ctx.invoke(self._join)
+    @app_commands.command(name='listen', description='Make the bot listen and transcribe speech')
+    async def _listen(self, interaction: discord.Interaction):
+        voice_state = self.get_voice_state(interaction.guild_id)
+        if not voice_state.voice:
+            return await interaction.response.send_message("I'm not in a voice channel. Use /join first.")
+        
+        await interaction.response.send_message("Listening... Speak now!")
         
         r = sr.Recognizer()
         with sr.Microphone() as source:
-            audio = r.listen(source)
+            audio = r.listen(source, timeout=5, phrase_time_limit=5)
         
         try:
             text = r.recognize_google(audio)
-            await ctx.send(f"I heard: {text}")
+            await interaction.followup.send(f"I heard: {text}")
         except sr.UnknownValueError:
-            await ctx.send("Sorry, I couldn't understand that.")
+            await interaction.followup.send("Sorry, I couldn't understand that.")
         except sr.RequestError:
-            await ctx.send("Sorry, my speech recognition service is down.")
+            await interaction.followup.send("Sorry, my speech recognition service is down.")
 
-    @commands.command(name='music')
-    async def _play_music(self, ctx, *, query: str):
-        if not ctx.voice_state.voice:
-            await ctx.invoke(self._join)
+    @app_commands.command(name='play', description='Play a song from YouTube')
+    async def _play_music(self, interaction: discord.Interaction, query: str):
+        voice_state = self.get_voice_state(interaction.guild_id)
+        if not voice_state.voice:
+            return await interaction.response.send_message("I'm not in a voice channel. Use /join first.")
         
-        player = await wavelink.NodePool.get_node().get_player(ctx.guild)
-        tracks = await wavelink.YouTubeTrack.search(query)
-        if not tracks:
-            await ctx.send("No tracks found.")
-            return
-        await player.play(tracks[0])
-        await ctx.send(f"Now playing: {tracks[0].title}")
+        await interaction.response.defer()
+        
+        try:
+            track = await wavelink.YouTubeTrack.search(query, return_first=True)
+        except Exception as e:
+            return await interaction.followup.send(f"An error occurred while searching: {str(e)}")
+
+        if not track:
+            return await interaction.followup.send("No track found.")
+
+        await voice_state.voice.play(track)
+        await interaction.followup.send(f"Now playing: {track.title}")
 
 class VoiceState:
     def __init__(self, bot, cog):
         self.bot = bot
         self.cog = cog
         self.voice = None
-        self.audio_player = None
+        self.current = None
 
     async def stop(self):
         if self.voice:
@@ -134,23 +159,3 @@ class VoiceState:
 
 async def setup(bot):
     await bot.add_cog(VoiceAI(bot))
-
-async def main():
-    intents = discord.Intents.default()
-    intents.message_content = True
-    bot = commands.Bot(command_prefix='!', intents=intents)
-
-    async def start_nodes():
-        node = await wavelink.NodePool.create_node(
-            bot=bot,
-            host='localhost',
-            port=2333,
-            password='youshallnotpass'
-        )
-
-    bot.loop.create_task(start_nodes())
-    await bot.add_cog(VoiceAI(bot))
-    await bot.start('your_token_here')
-
-if __name__ == "__main__":
-    asyncio.run(main())
