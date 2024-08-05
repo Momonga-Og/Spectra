@@ -61,7 +61,8 @@ EXTENSIONS = [
     'cogs.relocate', 'cogs.watermark', 'cogs.serverstats', 'cogs.talk', 'cogs.write',
     'cogs.watermark_user', 'cogs.attack', 'cogs.new_users', 'cogs.role',
     'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.screenshot',
-    'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession', 'cogs.search'
+    'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession',
+    'cogs.search'  # Adding the new search cog
 ]
 
 async def load_extensions():
