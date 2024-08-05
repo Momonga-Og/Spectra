@@ -9,7 +9,4 @@ pydub
 yt-dlp
 pandas
 openpyxl
-SpeechRecognition
-pydub
-numpy
-wavelink
+
