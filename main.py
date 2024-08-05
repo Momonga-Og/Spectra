@@ -3,87 +3,92 @@ from discord.ext import commands
 import os
 import asyncio
 import logging
+from typing import Optional
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix='!', intents=intents)
 
-# Replace 'YOUR_USER_ID' with your actual Discord user ID
-OWNER_ID = 486652069831376943  # Example ID, replace with your actual Discord user ID
+OWNER_ID = 486652069831376943  # Keep the owner ID directly in the code as requested
+TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
 async def close_sessions():
     await bot.session.close()
 
 @bot.event
 async def on_ready():
-    logging.info(f'Logged in as {bot.user}')
+    logger.info(f'Logged in as {bot.user}')
+    await sync_commands()
+
+async def sync_commands():
     if not hasattr(bot, 'synced'):
         try:
             synced = await bot.tree.sync()
-            logging.info(f"Synced {len(synced)} commands")
+            logger.info(f"Synced {len(synced)} commands")
             bot.synced = True
         except Exception as e:
-            logging.exception("Failed to sync commands")
+            logger.exception("Failed to sync commands")
 
 @bot.event
-async def on_message(message):
-    # Check if the message is a DM and not from the bot itself
+async def on_message(message: discord.Message):
     if isinstance(message.channel, discord.DMChannel) and message.author != bot.user:
-        # Get the owner (you)
-        owner = await bot.fetch_user(OWNER_ID)
-        if owner:
-            # Forward the message content to the owner
-            await owner.send(f"Message from {message.author}: {message.content}")
+        await forward_dm(message)
+    await bot.process_commands(message)
+
+async def forward_dm(message: discord.Message):
+    owner = await bot.fetch_user(OWNER_ID)
+    if owner:
+        await owner.send(f"Message from {message.author}: {message.content}")
 
 @bot.event
 async def on_disconnect():
-    logging.info("Bot disconnected")
+    logger.info("Bot disconnected")
+
+@bot.event
+async def on_error(event: str, *args, **kwargs):
+    logger.exception(f"An error occurred in event {event}")
 
 @bot.event
 async def on_close():
-    logging.info("Bot is closing")
+    logger.info("Bot is closing")
     await close_sessions()
 
-async def load_extensions():
-    try:
-        await bot.load_extension('cogs.general')
-        await bot.load_extension('cogs.moderation')
-        await bot.load_extension('cogs.poll')
-        await bot.load_extension('cogs.admin')
-        await bot.load_extension('cogs.voice')
-        await bot.load_extension('cogs.relocate')
-        await bot.load_extension('cogs.watermark')
-        await bot.load_extension('cogs.serverstats')
-        await bot.load_extension('cogs.talk')
-        await bot.load_extension('cogs.write')
-        await bot.load_extension('cogs.watermark_user')
-        await bot.load_extension('cogs.attack')  # Added attack extension
-        await bot.load_extension('cogs.new_users')  # Added new_users extension
-        await bot.load_extension('cogs.role')
-        await bot.load_extension('cogs.youtube_mp3')
-        await bot.load_extension('cogs.image_converter')
-        await bot.load_extension('cogs.clear')
-        await bot.load_extension('cogs.screenshot')
-        await bot.load_extension('cogs.rbg')
-        await bot.load_extension('cogs.bow')
-        await bot.load_extension('cogs.welcomesparta')
-        await bot.load_extension('cogs.contract')
-        await bot.load_extension('cogs.profession')
+EXTENSIONS = [
+    'cogs.general', 'cogs.moderation', 'cogs.poll', 'cogs.admin', 'cogs.voice',
+    'cogs.relocate', 'cogs.watermark', 'cogs.serverstats', 'cogs.talk', 'cogs.write',
+    'cogs.watermark_user', 'cogs.attack', 'cogs.new_users', 'cogs.role',
+    'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.screenshot',
+    'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession'
+]
 
-    except Exception as e:
-        logging.exception("Failed to load extensions")
+async def load_extensions():
+    for extension in EXTENSIONS:
+        try:
+            await bot.load_extension(extension)
+            logger.info(f"Loaded extension: {extension}")
+        except Exception as e:
+            logger.exception(f"Failed to load extension {extension}")
 
 async def main():
     async with bot:
         await load_extensions()
-        token = os.getenv('DISCORD_BOT_TOKEN')
-        if not token:
-            logging.error("Bot token not found")
+        if not TOKEN:
+            logger.error("Bot token not found")
             return
-        await bot.start(token)
+        try:
+            await bot.start(TOKEN)
+        except discord.LoginFailure:
+            logger.error("Invalid token")
+        except Exception as e:
+            logger.exception("Failed to start the bot")
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")
     except Exception as e:
-        logging.exception("Bot encountered an error and stopped")
+        logger.exception("Bot encountered an error and stopped")
