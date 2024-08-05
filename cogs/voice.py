@@ -1,145 +1,156 @@
 import discord
 from discord.ext import commands
-from gtts import gTTS
-import os
 import asyncio
 import logging
 import random
+from gtts import gTTS
+from io import BytesIO
+import speech_recognition as sr
+import numpy as np
+from pydub import AudioSegment
+import wavelink
 
 logging.basicConfig(level=logging.INFO)
 
-class Voice(commands.Cog):
+class VoiceAI(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.blocked_users = {}
-        self.welcome_messages = [
-            "Hello there! Glad you could join us, {name}!",
-            "Welcome, {name}! We hope you have a great time!",
-            "Hi {name}! Nice to see you here!",
-            "Hey {name}! Welcome to the voice chat!",
-            "Greetings, {name}! Enjoy your stay!",
-            "What's up, {name}? Welcome aboard!",
-            "Good to see you, {name}! Have fun!",
-            "Hey {name}! Let's have a great time together!",
-            "Welcome {name}! We're glad you're here!",
-            "Hello {name}! Delighted to see you in the voice chat channel!",
-            "Hi {name}! Welcome, and enjoy your stay!",
-            "Hey {name}! Great to see you!",
-            "Hi {name}! Welcome to the channel!",
-            "Hello {name}! We're happy to have you here!",
-            "Hey {name}! Thanks for joining us!",
-            "Hi {name}! Welcome and have fun!",
-            "Hey {name}! It's great to see you!",
-            "Hello {name}! Enjoy the chat!",
-            "Hey {name}! We're glad you could join us!",
-            "Hi {name}! Thanks for stopping by!",
-            "Hello {name}! Welcome to our voice chat!",
-            "Hey {name}! It's awesome to have you here!",
-            "Hi {name}! Welcome and let's have some fun!",
-            "Hello {name}! Thanks for joining the chat!",
-            "Hey {name}! It's great to see you here!",
-            "Hi {name}! Welcome to the chat!",
-            "Hello {name}! Glad you could make it!",
-            "Hey {name}! Welcome to our voice chat!",
-            "Hi {name}! It's great to have you here!",
-            "Hello {name}! Enjoy your time with us!",
-            "Hey {name}! Thanks for joining the voice chat!",
-            "Hi {name}! We're happy to see you here!",
-            "Hello {name}! Welcome and have a great time!",
-            "Hey {name}! We're glad to have you with us!",
-            "Hi {name}! Thanks for being here!",
-            "Hello {name}! Enjoy your stay in the chat!",
-            "Hey {name}! It's great to have you join us!",
-            "Hi {name}! Welcome and enjoy the chat!",
-            "Hello {name}! We're thrilled to have you here!",
-            "Hey {name}! Thanks for coming!",
-            "Hi {name}! Welcome and have a great time chatting!"
-        ]
+        self.voice_states = {}
+        self.audio_effects = {
+            "robot": self.apply_robot_effect,
+            "echo": self.apply_echo_effect,
+            "pitch_shift": self.apply_pitch_shift
+        }
 
-    def text_to_speech(self, text, filename):
-        tts = gTTS(text)
-        tts.save(filename)
+    async def cog_before_invoke(self, ctx):
+        ctx.voice_state = self.get_voice_state(ctx.guild.id)
 
-    async def connect_to_channel(self, channel, retries=3, delay=5):
-        """Attempts to connect to a voice channel with retries."""
-        for attempt in range(retries):
-            try:
-                vc = await channel.connect()
-                return vc
-            except (asyncio.TimeoutError, discord.errors.ConnectionClosed) as e:
-                logging.warning(f"Error while connecting to voice channel, attempt {attempt + 1} of {retries}: {e}")
-                if attempt < retries - 1:
-                    await asyncio.sleep(delay)
-                else:
-                    raise e
-        return None
-
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
-        if before.channel is None and after.channel is not None:
-            guild_id = member.guild.id
-            if guild_id not in self.blocked_users:
-                self.blocked_users[guild_id] = set()
-
-            if not member.bot and member.id not in self.blocked_users[guild_id]:
-                try:
-                    # Check for existing voice clients and connect/move as needed
-                    vc = None
-                    if not self.bot.voice_clients:
-                        vc = await self.connect_to_channel(after.channel)
-                    else:
-                        vc = self.bot.voice_clients[0]
-                        if vc.channel != after.channel:
-                            await vc.move_to(after.channel)
-                            vc = self.bot.voice_clients[0]
-
-                    if vc and vc.is_connected():
-                        audio_file = f'{member.name}_welcome.mp3'
-                        welcome_text = random.choice(self.welcome_messages).format(name=member.name)
-                        self.text_to_speech(welcome_text, audio_file)
-
-                        # Ensure we're not already playing something
-                        if not vc.is_playing():
-                            vc.play(discord.FFmpegPCMAudio(audio_file))
-
-                            while vc.is_playing():
-                                await asyncio.sleep(1)
-
-                        # Disconnect after playing the welcome message
-                        if vc.is_connected():
-                            await vc.disconnect()
-
-                        # Check if the audio file exists before trying to remove it
-                        if os.path.exists(audio_file):
-                            os.remove(audio_file)
-                        else:
-                            logging.warning(f"Audio file {audio_file} not found for removal.")
-                    else:
-                        logging.error("Failed to connect to the voice channel after retries.")
-                except discord.errors.ClientException as e:
-                    logging.exception(f"ClientException in on_voice_state_update: {e}")
-                except discord.errors.DiscordException as e:
-                    logging.exception(f"DiscordException in on_voice_state_update: {e}")
-                except asyncio.TimeoutError as e:
-                    logging.exception(f"TimeoutError in on_voice_state_update: {e}")
-                except Exception as e:
-                    logging.exception(f"Unexpected error in on_voice_state_update: {e}")
+    def get_voice_state(self, guild_id):
+        state = self.voice_states.get(guild_id)
+        if not state:
+            state = VoiceState(self.bot, self)
+            self.voice_states[guild_id] = state
+        return state
 
     async def cog_unload(self):
-        for vc in self.bot.voice_clients:
-            await vc.disconnect()
+        for state in self.voice_states.values():
+            await state.stop()
+
+    def text_to_speech(self, text, effect=None):
+        fp = BytesIO()
+        tts = gTTS(text)
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        
+        if effect and effect in self.audio_effects:
+            return self.audio_effects[effect](fp)
+        return fp
+
+    def apply_robot_effect(self, audio_fp):
+        # Implement robot voice effect
+        audio = AudioSegment.from_file(audio_fp, format="mp3")
+        robot_audio = audio.overlay(audio.invert_phase())
+        output = BytesIO()
+        robot_audio.export(output, format="mp3")
+        output.seek(0)
+        return output
+
+    def apply_echo_effect(self, audio_fp):
+        # Implement echo effect
+        audio = AudioSegment.from_file(audio_fp, format="mp3")
+        echo_audio = audio + audio.overlay(audio.fade_in(1000), position=100)
+        output = BytesIO()
+        echo_audio.export(output, format="mp3")
+        output.seek(0)
+        return output
+
+    def apply_pitch_shift(self, audio_fp):
+        # Implement pitch shift effect
+        audio = AudioSegment.from_file(audio_fp, format="mp3")
+        shifted = audio._spawn(audio.raw_data, overrides={
+            "frame_rate": int(audio.frame_rate * 1.2)
+        }).set_frame_rate(audio.frame_rate)
+        output = BytesIO()
+        shifted.export(output, format="mp3")
+        output.seek(0)
+        return output
+
+    @commands.command(name='join', invoke_without_subcommand=True)
+    async def _join(self, ctx):
+        destination = ctx.author.voice.channel
+        if ctx.voice_state.voice:
+            await ctx.voice_state.voice.move_to(destination)
+            return
+        ctx.voice_state.voice = await destination.connect()
+
+    @commands.command(name='speak')
+    async def _speak(self, ctx, *, message):
+        if not ctx.voice_state.voice:
+            await ctx.invoke(self._join)
+        audio_fp = self.text_to_speech(message, effect=random.choice(list(self.audio_effects.keys())))
+        ctx.voice_state.voice.play(discord.FFmpegPCMAudio(audio_fp, pipe=True))
+
+    @commands.command(name='listen')
+    async def _listen(self, ctx):
+        if not ctx.voice_state.voice:
+            await ctx.invoke(self._join)
+        
+        r = sr.Recognizer()
+        with sr.Microphone() as source:
+            audio = r.listen(source)
+        
+        try:
+            text = r.recognize_google(audio)
+            await ctx.send(f"I heard: {text}")
+        except sr.UnknownValueError:
+            await ctx.send("Sorry, I couldn't understand that.")
+        except sr.RequestError:
+            await ctx.send("Sorry, my speech recognition service is down.")
+
+    @commands.command(name='music')
+    async def _play_music(self, ctx, *, query: str):
+        if not ctx.voice_state.voice:
+            await ctx.invoke(self._join)
+        
+        player = await wavelink.NodePool.get_node().get_player(ctx.guild)
+        tracks = await wavelink.YouTubeTrack.search(query)
+        if not tracks:
+            await ctx.send("No tracks found.")
+            return
+        await player.play(tracks[0])
+        await ctx.send(f"Now playing: {tracks[0].title}")
+
+class VoiceState:
+    def __init__(self, bot, cog):
+        self.bot = bot
+        self.cog = cog
+        self.voice = None
+        self.audio_player = None
+
+    async def stop(self):
+        if self.voice:
+            await self.voice.disconnect()
+            self.voice = None
 
 async def setup(bot):
-    await bot.add_cog(Voice(bot))
+    await bot.add_cog(VoiceAI(bot))
 
 async def main():
     intents = discord.Intents.default()
     intents.message_content = True
     bot = commands.Bot(command_prefix='!', intents=intents)
 
-    bot.load_extension('your_cog_module_name')  # Replace with the actual module name
+    async def start_nodes():
+        node = await wavelink.NodePool.create_node(
+            bot=bot,
+            host='localhost',
+            port=2333,
+            password='youshallnotpass'
+        )
 
-    await bot.start('your_token_here')  # Replace with your bot token
+    bot.loop.create_task(start_nodes())
+    await bot.add_cog(VoiceAI(bot))
+    await bot.start('your_token_here')
 
 if __name__ == "__main__":
     asyncio.run(main())
