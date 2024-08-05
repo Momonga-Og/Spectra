@@ -15,14 +15,14 @@ class Search(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def join_voice_channel(self, ctx):
+    async def join_voice_channel(self, interaction):
         """Join the user's voice channel."""
-        if ctx.author.voice:
-            channel = ctx.author.voice.channel
+        if interaction.user.voice:
+            channel = interaction.user.voice.channel
             vc = await channel.connect()
             return vc
         else:
-            await ctx.send("You are not connected to a voice channel.")
+            await interaction.response.send_message("You are not connected to a voice channel.", ephemeral=True)
             return None
 
     async def recognize_speech(self, audio_file):
@@ -57,10 +57,10 @@ class Search(commands.Cog):
         else:
             return "No results found."
 
-    @commands.command(name='search')
-    async def search(self, ctx):
+    @discord.app_commands.command(name='search', description="Join voice chat, listen to the user, and return search results.")
+    async def search(self, interaction: discord.Interaction):
         """Join voice chat, listen to the user, and return search results."""
-        vc = await self.join_voice_channel(ctx)
+        vc = await self.join_voice_channel(interaction)
         if vc:
             audio_file = 'user_speech.wav'
 
@@ -69,17 +69,17 @@ class Search(commands.Cog):
                 audio = AudioSegment.from_file(stream, format="raw", frame_rate=44100, channels=2, sample_width=2)
                 audio.export(audio_file, format='wav')
 
-            await ctx.send("Please speak now...")
+            await interaction.response.send_message("Please speak now...", ephemeral=True)
             await asyncio.sleep(5)
             save_audio()
 
             await vc.disconnect()
 
             recognized_text = await self.recognize_speech(audio_file)
-            await ctx.send(f"You said: {recognized_text}")
+            await interaction.followup.send(f"You said: {recognized_text}")
 
             search_result = await self.search_google(recognized_text)
-            await ctx.send(search_result)
+            await interaction.followup.send(search_result)
 
             if os.path.exists(audio_file):
                 os.remove(audio_file)
