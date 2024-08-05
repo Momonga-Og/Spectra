@@ -5,8 +5,8 @@ import asyncio
 import logging
 import speech_recognition as sr
 from pydub import AudioSegment
-from pydub.playback import play
 import requests
+from bs4 import BeautifulSoup
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -28,8 +28,6 @@ class Search(commands.Cog):
     async def recognize_speech(self, audio_file):
         """Recognize speech from the audio file."""
         recognizer = sr.Recognizer()
-        audio = AudioSegment.from_file(audio_file)
-        play(audio)
 
         with sr.AudioFile(audio_file) as source:
             audio_data = recognizer.record(source)
@@ -43,24 +41,23 @@ class Search(commands.Cog):
             return f"Could not request results; {e}"
 
     async def search_google(self, query):
-        """Search Google for the query and return the top result."""
-        api_key = 'YOUR_GOOGLE_API_KEY'
-        search_engine_id = 'YOUR_SEARCH_ENGINE_ID'
-        url = f'https://www.googleapis.com/customsearch/v1?q={query}&key={api_key}&cx={search_engine_id}'
+        """Perform a web search and return the top result."""
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+        response = requests.get(f"https://www.google.com/search?q={query}", headers=headers)
+        soup = BeautifulSoup(response.text, 'html.parser')
 
-        response = requests.get(url)
-        results = response.json()
-
-        if 'items' in results:
-            first_result = results['items'][0]
-            title = first_result['title']
-            snippet = first_result['snippet']
-            link = first_result['link']
-            return f"{title}\n{snippet}\n{link}"
+        # Extract search results
+        result = soup.find('div', class_='BNeawe vvjwJb AP7Wnd')
+        if result:
+            title = result.get_text()
+            snippet = result.find_next('div', class_='BNeawe s3v9rd AP7Wnd').get_text()
+            link = result.find_next('a')['href']
+            return f"{title}\n{snippet}\nhttps://www.google.com{link}"
         else:
             return "No results found."
 
-    @commands.slash_command(name='search', description="Join voice chat, listen to the user, and return search results.")
+    @commands.command(name='search')
     async def search(self, ctx):
         """Join voice chat, listen to the user, and return search results."""
         vc = await self.join_voice_channel(ctx)
@@ -68,8 +65,8 @@ class Search(commands.Cog):
             audio_file = 'user_speech.wav'
 
             def save_audio():
-                stream = discord.FFmpegPCMAudio(source=vc.source)
-                audio = AudioSegment.from_raw(stream, sample_width=2, frame_rate=44100, channels=2)
+                stream = discord.FFmpegPCMAudio(vc.source)
+                audio = AudioSegment.from_file(stream, format="raw", frame_rate=44100, channels=2, sample_width=2)
                 audio.export(audio_file, format='wav')
 
             await ctx.send("Please speak now...")
@@ -89,4 +86,3 @@ class Search(commands.Cog):
 
 async def setup(bot):
     bot.add_cog(Search(bot))
-
