@@ -65,4 +65,4 @@ class RealityCheck(commands.Cog):
         await interaction.followup.send(f"Test completed! Your score is {score}/3. Did you uncover anything unsettling?")
 
 async def setup(bot):
-    await bot.add_cog(realityCheck(bot))
+    await bot.add_cog(RealityCheck(bot))
