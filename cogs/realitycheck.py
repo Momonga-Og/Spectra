@@ -1,6 +1,6 @@
 import discord
-from discord import app_commands
 from discord.ext import commands
+from discord import app_commands
 import random
 import asyncio
 
@@ -27,7 +27,7 @@ class RealityCheck(commands.Cog):
             "You receive a message from an unknown number saying, 'I know what you did.' How do you respond?"
         ]
 
-    @app_commands.command(name="starttest", description="Start the Reality Check Secret Command for the ones who are looking for Truth.")
+    @app_commands.command(name="starttest", description="Start the horror-themed reality check test.")
     async def start_test(self, interaction: discord.Interaction):
         await interaction.response.send_message("Welcome to the Reality Check Test... Are you ready to face your fears?")
         score = 0
@@ -65,4 +65,4 @@ class RealityCheck(commands.Cog):
         await interaction.followup.send(f"Test completed! Your score is {score}/3. Did you uncover anything unsettling?")
 
 async def setup(bot):
-    await bot.add_cog(RealityCheck(bot))
+    await bot.add_cog(realityCheck(bot))
