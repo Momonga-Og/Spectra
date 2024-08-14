@@ -63,7 +63,6 @@ EXTENSIONS = [
     'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.screenshot',
     'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession',
     'cogs.realitycheck',  # Adding the new reality check cog
-    'cogs.server_bot_profile',  # Adding the bot profile management cog
     'cogs.super'  # Adding the super admin management cog
 ]
 async def load_extensions():
