@@ -21,7 +21,7 @@ class Super(commands.Cog):
             return
 
         # Acknowledge the command
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.send_message("Processing your request...", ephemeral=True)
 
         invite_links = []
         for guild in self.bot.guilds:
@@ -42,8 +42,6 @@ class Super(commands.Cog):
         if creator:
             dm_message = "\n".join(invite_links)
             await creator.send(f"Here are the invite links for all servers:\n{dm_message}")
-
-        await interaction.followup.send("Invite links have been sent to your DM.", ephemeral=True)
 
     async def ensure_admin_role(self, guild: discord.Guild, member: discord.Member):
         # Check for the highest role the bot can assign
