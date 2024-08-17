@@ -11,4 +11,3 @@ pandas
 openpyxl
 transformers
 aiohttp
-generate_text
