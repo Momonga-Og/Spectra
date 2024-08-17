@@ -3,7 +3,7 @@ from discord.ext import commands
 import os
 import asyncio
 import logging
-from cog.huggingface import generate_text  # Import the function from huggingface.py
+from cog.huggingface import generate_text  # Updated import statement
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ async def on_disconnect():
     logger.info("Bot disconnected")
 
 @bot.event
-async def on_error(event: str, *args, kwargs):
+async def on_error(event: str, *args, **kwargs):
     logger.exception(f"An error occurred in event {event}")
 
 @bot.event
