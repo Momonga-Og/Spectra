@@ -9,3 +9,5 @@ pydub
 yt-dlp
 pandas
 openpyxl
+transformers
+aiohttp
