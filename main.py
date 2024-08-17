@@ -3,7 +3,7 @@ from discord.ext import commands
 import os
 import asyncio
 import logging
-from cog.huggingface import generate_text  # Updated import statement
+import generate_text  # Updated import statement
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
