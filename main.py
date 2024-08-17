@@ -3,7 +3,7 @@ from discord.ext import commands
 import os
 import asyncio
 import logging
-from typing import Optional
+from huggingface import generate_text  # Import the function from huggingface.py
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ async def on_disconnect():
     logger.info("Bot disconnected")
 
 @bot.event
-async def on_error(event: str, *args, **kwargs):
+async def on_error(event: str, *args, kwargs):
     logger.exception(f"An error occurred in event {event}")
 
 @bot.event
@@ -62,9 +62,9 @@ EXTENSIONS = [
     'cogs.watermark_user', 'cogs.attack', 'cogs.new_users', 'cogs.role',
     'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.screenshot',
     'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession',
-    'cogs.realitycheck',  # Adding the new reality check cog
-    'cogs.super'  # Adding the super admin management cog
+    'cogs.realitycheck', 'cogs.super'
 ]
+
 async def load_extensions():
     for extension in EXTENSIONS:
         try:
@@ -72,6 +72,11 @@ async def load_extensions():
             logger.info(f"Loaded extension: {extension}")
         except Exception as e:
             logger.exception(f"Failed to load extension {extension}")
+
+@bot.command(name='ai', help='Generates text using Hugging Face.')
+async def ai(ctx, *, prompt: str):
+    response = await generate_text(prompt)
+    await ctx.send(response)
 
 async def main():
     async with bot:
