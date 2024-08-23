@@ -17,7 +17,10 @@ class ServerStats(commands.Cog):
         embed.add_field(name="Total Channels", value=num_channels, inline=False)
         embed.add_field(name="Total Roles", value=num_roles, inline=False)
         embed.add_field(name="Total Members", value=num_members, inline=False)
-        embed.set_footer(text=f"Requested by {interaction.user}", icon_url=interaction.user.avatar.url)
+
+        # Handle the case where the user might not have a custom avatar
+        avatar_url = interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url
+        embed.set_footer(text=f"Requested by {interaction.user}", icon_url=avatar_url)
 
         await interaction.response.send_message(embed=embed)
 
