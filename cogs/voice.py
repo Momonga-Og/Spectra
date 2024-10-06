@@ -6,7 +6,8 @@ import asyncio
 import logging
 import random
 import speech_recognition as sr
-from transformers import pipeline  # For AI-based responses
+from transformers import pipeline
+import tempfile
 
 logging.basicConfig(level=logging.INFO)
 
@@ -20,29 +21,17 @@ class Voice(commands.Cog):
         ]
         self.conversation_pipeline = pipeline("text2text-generation", model="facebook/blenderbot-400M-distill")
 
-    def text_to_speech(self, text, filename):
+    def text_to_speech(self, text):
         tts = gTTS(text)
-        tts.save(filename)
-
-    def recognize_speech(self):
-        recognizer = sr.Recognizer()
-        with sr.Microphone() as source:
-            print("Listening for a question...")
-            audio = recognizer.listen(source)
-            try:
-                text = recognizer.recognize_google(audio)
-                return text
-            except sr.UnknownValueError:
-                return "Sorry, I didn't catch that."
-            except sr.RequestError:
-                return "Speech Recognition service is unavailable."
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as tmp_file:
+            tts.save(tmp_file.name)
+            return tmp_file.name
 
     def generate_ai_response(self, text):
         response = self.conversation_pipeline(text)
         return response[0]["generated_text"]
 
     async def connect_to_channel(self, channel, retries=3, delay=5):
-        """Attempts to connect to a voice channel with retries."""
         for attempt in range(retries):
             try:
                 vc = await channel.connect()
@@ -68,9 +57,8 @@ class Voice(commands.Cog):
                     
                     if vc and vc.is_connected():
                         # Welcome message
-                        audio_file = f'{member.name}_welcome.mp3'
                         welcome_text = random.choice(self.welcome_messages).format(name=member.name)
-                        self.text_to_speech(welcome_text, audio_file)
+                        audio_file = self.text_to_speech(welcome_text)
 
                         # Play welcome message
                         if not vc.is_playing():
@@ -78,8 +66,10 @@ class Voice(commands.Cog):
                             while vc.is_playing():
                                 await asyncio.sleep(1)
 
-                        # Listen for user question after welcome
-                        user_question = self.recognize_speech()
+                        # Listen for user question
+                        # Modify this part to work with audio files recorded from the voice channel
+                        # e.g., Use voice channel recording instead of microphone
+                        user_question = "Sample user question"  # Placeholder, replace with actual audio recognition logic
                         logging.info(f"Recognized question: {user_question}")
 
                         # Generate AI response
@@ -87,8 +77,7 @@ class Voice(commands.Cog):
                         logging.info(f"AI response: {ai_response}")
 
                         # Convert AI response to speech and play
-                        response_audio = f'{member.name}_response.mp3'
-                        self.text_to_speech(ai_response, response_audio)
+                        response_audio = self.text_to_speech(ai_response)
                         vc.play(discord.FFmpegPCMAudio(response_audio))
 
                         # Disconnect after playing the response
@@ -99,10 +88,8 @@ class Voice(commands.Cog):
                             await vc.disconnect()
 
                         # Clean up audio files
-                        if os.path.exists(audio_file):
-                            os.remove(audio_file)
-                        if os.path.exists(response_audio):
-                            os.remove(response_audio)
+                        os.remove(audio_file)
+                        os.remove(response_audio)
 
                 except Exception as e:
                     logging.exception(f"Error in on_voice_state_update: {e}")
@@ -113,4 +100,3 @@ class Voice(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))
-    
