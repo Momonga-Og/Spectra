@@ -13,10 +13,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3  # Download your code from GitHub
 
-      - name: Install FFmpeg (Optional)  # Only needed if your bot uses FFmpeg
+      - name: Install FFmpeg (Optional)
         run: |
           sudo apt-get update  # Update package lists
-          sudo apt-get install -y ffmpeg  # Install FFmpeg
+          sudo apt-get install -y ffmpeg  # Install FFmpeg (if needed)
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -38,7 +38,13 @@ jobs:
           python -m pip install --upgrade pip  # Upgrade pip to ensure latest version
           pip install -r requirements.txt  # Install packages from requirements.txt
 
-      - name: Address pyaudio dependency  
+      - name: Address pyaudio dependency (Optional)
+        run: |
+          if [[ -z $(pip show pyaudio | grep -i "Installed: True") ]]; then
+            # pyaudio is not installed, install it if needed
+            sudo apt-get install -y portaudio19  # Install system-level portaudio
+            pip install pyaudio
+          fi
 
       - name: Run the bot
         env:
