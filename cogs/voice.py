@@ -5,6 +5,8 @@ import os
 import asyncio
 import logging
 import random
+import speech_recognition as sr
+from transformers import pipeline  # For AI-based responses
 
 logging.basicConfig(level=logging.INFO)
 
@@ -15,50 +17,29 @@ class Voice(commands.Cog):
         self.welcome_messages = [
             "Hello there! Glad you could join us, {name}!",
             "Welcome, {name}! We hope you have a great time!",
-            "Hi {name}! Nice to see you here!",
-            "Hey {name}! Welcome to the voice chat!",
-            "Greetings, {name}! Enjoy your stay!",
-            "What's up, {name}? Welcome aboard!",
-            "Good to see you, {name}! Have fun!",
-            "Hey {name}! Let's have a great time together!",
-            "Welcome {name}! We're glad you're here!",
-            "Hello {name}! Delighted to see you in the voice chat channel!",
-            "Hi {name}! Welcome, and enjoy your stay!",
-            "Hey {name}! Great to see you!",
-            "Hi {name}! Welcome to the channel!",
-            "Hello {name}! We're happy to have you here!",
-            "Hey {name}! Thanks for joining us!",
-            "Hi {name}! Welcome and have fun!",
-            "Hey {name}! It's great to see you!",
-            "Hello {name}! Enjoy the chat!",
-            "Hey {name}! We're glad you could join us!",
-            "Hi {name}! Thanks for stopping by!",
-            "Hello {name}! Welcome to our voice chat!",
-            "Hey {name}! It's awesome to have you here!",
-            "Hi {name}! Welcome and let's have some fun!",
-            "Hello {name}! Thanks for joining the chat!",
-            "Hey {name}! It's great to see you here!",
-            "Hi {name}! Welcome to the chat!",
-            "Hello {name}! Glad you could make it!",
-            "Hey {name}! Welcome to our voice chat!",
-            "Hi {name}! It's great to have you here!",
-            "Hello {name}! Enjoy your time with us!",
-            "Hey {name}! Thanks for joining the voice chat!",
-            "Hi {name}! We're happy to see you here!",
-            "Hello {name}! Welcome and have a great time!",
-            "Hey {name}! We're glad to have you with us!",
-            "Hi {name}! Thanks for being here!",
-            "Hello {name}! Enjoy your stay in the chat!",
-            "Hey {name}! It's great to have you join us!",
-            "Hi {name}! Welcome and enjoy the chat!",
-            "Hello {name}! We're thrilled to have you here!",
-            "Hey {name}! Thanks for coming!",
-            "Hi {name}! Welcome and have a great time chatting!"
         ]
+        self.conversation_pipeline = pipeline("conversational", model="facebook/blenderbot-400M-distill")
 
     def text_to_speech(self, text, filename):
         tts = gTTS(text)
         tts.save(filename)
+
+    def recognize_speech(self):
+        recognizer = sr.Recognizer()
+        with sr.Microphone() as source:
+            print("Listening for a question...")
+            audio = recognizer.listen(source)
+            try:
+                text = recognizer.recognize_google(audio)
+                return text
+            except sr.UnknownValueError:
+                return "Sorry, I didn't catch that."
+            except sr.RequestError:
+                return "Speech Recognition service is unavailable."
+
+    def generate_ai_response(self, text):
+        response = self.conversation_pipeline(text)
+        return response[0]["generated_text"]
 
     async def connect_to_channel(self, channel, retries=3, delay=5):
         """Attempts to connect to a voice channel with retries."""
@@ -83,47 +64,48 @@ class Voice(commands.Cog):
 
             if not member.bot and member.id not in self.blocked_users[guild_id]:
                 try:
-                    # Check for existing voice clients and connect/move as needed
-                    vc = None
-                    if not self.bot.voice_clients:
-                        vc = await self.connect_to_channel(after.channel)
-                    else:
-                        vc = self.bot.voice_clients[0]
-                        if vc.channel != after.channel:
-                            await vc.move_to(after.channel)
-                            vc = self.bot.voice_clients[0]
-
+                    vc = await self.connect_to_channel(after.channel)
+                    
                     if vc and vc.is_connected():
+                        # Welcome message
                         audio_file = f'{member.name}_welcome.mp3'
                         welcome_text = random.choice(self.welcome_messages).format(name=member.name)
                         self.text_to_speech(welcome_text, audio_file)
 
-                        # Ensure we're not already playing something
+                        # Play welcome message
                         if not vc.is_playing():
                             vc.play(discord.FFmpegPCMAudio(audio_file))
-
                             while vc.is_playing():
                                 await asyncio.sleep(1)
 
-                        # Disconnect after playing the welcome message
+                        # Listen for user question after welcome
+                        user_question = self.recognize_speech()
+                        logging.info(f"Recognized question: {user_question}")
+
+                        # Generate AI response
+                        ai_response = self.generate_ai_response(user_question)
+                        logging.info(f"AI response: {ai_response}")
+
+                        # Convert AI response to speech and play
+                        response_audio = f'{member.name}_response.mp3'
+                        self.text_to_speech(ai_response, response_audio)
+                        vc.play(discord.FFmpegPCMAudio(response_audio))
+
+                        # Disconnect after playing the response
+                        while vc.is_playing():
+                            await asyncio.sleep(1)
+
                         if vc.is_connected():
                             await vc.disconnect()
 
-                        # Check if the audio file exists before trying to remove it
+                        # Clean up audio files
                         if os.path.exists(audio_file):
                             os.remove(audio_file)
-                        else:
-                            logging.warning(f"Audio file {audio_file} not found for removal.")
-                    else:
-                        logging.error("Failed to connect to the voice channel after retries.")
-                except discord.errors.ClientException as e:
-                    logging.exception(f"ClientException in on_voice_state_update: {e}")
-                except discord.errors.DiscordException as e:
-                    logging.exception(f"DiscordException in on_voice_state_update: {e}")
-                except asyncio.TimeoutError as e:
-                    logging.exception(f"TimeoutError in on_voice_state_update: {e}")
+                        if os.path.exists(response_audio):
+                            os.remove(response_audio)
+
                 except Exception as e:
-                    logging.exception(f"Unexpected error in on_voice_state_update: {e}")
+                    logging.exception(f"Error in on_voice_state_update: {e}")
 
     async def cog_unload(self):
         for vc in self.bot.voice_clients:
@@ -132,14 +114,3 @@ class Voice(commands.Cog):
 async def setup(bot):
     await bot.add_cog(Voice(bot))
 
-async def main():
-    intents = discord.Intents.default()
-    intents.message_content = True
-    bot = commands.Bot(command_prefix='!', intents=intents)
-
-    bot.load_extension('your_cog_module_name')  # Replace with the actual module name
-
-    await bot.start('your_token_here')  # Replace with your bot token
-
-if __name__ == "__main__":
-    asyncio.run(main())
