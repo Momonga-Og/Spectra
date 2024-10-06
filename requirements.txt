@@ -12,3 +12,4 @@ openpyxl
 transformers
 aiohttp
 SpeechRecognition
+tensorflow
