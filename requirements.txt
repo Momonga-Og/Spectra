@@ -13,3 +13,4 @@ transformers
 aiohttp
 SpeechRecognition
 tensorflow
+tf-keras
