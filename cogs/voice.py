@@ -21,6 +21,8 @@ class Voice(commands.Cog):
 self.conversation_pipeline = pipeline("text2text-generation", model="facebook/blenderbot-400M-distill")
 
     def text_to_speech(self, text, filename):
+        with open(filename, 'wb') as file:
+            pass        
         tts = gTTS(text)
         tts.save(filename)
 
