@@ -14,3 +14,4 @@ aiohttp
 SpeechRecognition
 tensorflow
 tf-keras
+pyaudio
