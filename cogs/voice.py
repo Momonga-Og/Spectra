@@ -18,11 +18,9 @@ class Voice(commands.Cog):
             "Hello there! Glad you could join us, {name}!",
             "Welcome, {name}! We hope you have a great time!",
         ]
-self.conversation_pipeline = pipeline("text2text-generation", model="facebook/blenderbot-400M-distill")
+        self.conversation_pipeline = pipeline("text2text-generation", model="facebook/blenderbot-400M-distill")
 
     def text_to_speech(self, text, filename):
-        with open(filename, 'wb') as file:
-            pass        
         tts = gTTS(text)
         tts.save(filename)
 
@@ -115,4 +113,3 @@ self.conversation_pipeline = pipeline("text2text-generation", model="facebook/bl
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))
-
