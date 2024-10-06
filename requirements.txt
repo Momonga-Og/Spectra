@@ -11,3 +11,4 @@ pandas
 openpyxl
 transformers
 aiohttp
+SpeechRecognition
