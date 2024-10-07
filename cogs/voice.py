@@ -19,7 +19,8 @@ class Voice(commands.Cog):
             "Hello there! Glad you could join us, {name}!",
             "Welcome, {name}! We hope you have a great time!",
         ]
-        self.conversation_pipeline = pipeline("text2text-generation", model="facebook/blenderbot-400M-distill")
+        # Initialize the BERT question-answering model
+        self.qa_pipeline = pipeline("question-answering", model="google-bert/bert-large-uncased-whole-word-masking-finetuned-squad")
 
     def text_to_speech(self, text):
         tts = gTTS(text)
@@ -27,9 +28,10 @@ class Voice(commands.Cog):
             tts.save(tmp_file.name)
             return tmp_file.name
 
-    def generate_ai_response(self, text):
-        response = self.conversation_pipeline(text)
-        return response[0]["generated_text"]
+    def generate_ai_response(self, question, context):
+        # Use the question-answering model to generate a response
+        response = self.qa_pipeline(question=question, context=context)
+        return response['answer']
 
     async def connect_to_channel(self, channel, retries=3, delay=5):
         for attempt in range(retries):
@@ -67,13 +69,12 @@ class Voice(commands.Cog):
                                 await asyncio.sleep(1)
 
                         # Listen for user question
-                        # Modify this part to work with audio files recorded from the voice channel
-                        # e.g., Use voice channel recording instead of microphone
-                        user_question = "Sample user question"  # Placeholder, replace with actual audio recognition logic
+                        user_question = "What is the capital of France?"  # Placeholder, replace with actual audio recognition logic
+                        context = "France is a country in Europe. Paris is its capital city."  # Example context
                         logging.info(f"Recognized question: {user_question}")
 
-                        # Generate AI response
-                        ai_response = self.generate_ai_response(user_question)
+                        # Generate AI response using question-answering
+                        ai_response = self.generate_ai_response(user_question, context)
                         logging.info(f"AI response: {ai_response}")
 
                         # Convert AI response to speech and play
