@@ -9,6 +9,7 @@ import speech_recognition as sr
 from transformers import pipeline
 import tempfile
 from deep_translator import GoogleTranslator  # Import for multilingual support
+from langdetect import detect  # Import for language detection
 
 logging.basicConfig(level=logging.INFO)
 
@@ -91,11 +92,14 @@ class Voice(commands.Cog):
                         # Log the interaction
                         self.log_interaction(user_question, ai_response)
                         
+                        # Detect language of the original question
+                        original_lang = detect(user_question)
+                        
                         # Translate response back to user's language if necessary
-                        translated_response = self.translator.translate(ai_response, target=self.translator.detect(user_question).lang)
+                        translated_response = self.translator.translate(ai_response, target=original_lang)
 
                         # Convert AI response to speech and play
-                        response_audio = self.text_to_speech(translated_response)
+                        response_audio = self.text_to_speech(translated_response, lang=original_lang)
                         vc.play(discord.FFmpegPCMAudio(response_audio))
                         
                         # Disconnect after playing the response
