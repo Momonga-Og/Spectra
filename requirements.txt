@@ -15,4 +15,4 @@ SpeechRecognition
 tensorflow
 tf-keras
 pyaudio
-googletrans
+deep-translator
