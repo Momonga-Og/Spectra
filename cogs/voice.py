@@ -8,6 +8,7 @@ import random
 import speech_recognition as sr
 from transformers import pipeline
 import tempfile
+from googletrans import Translator  # Import for multilingual support
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,9 +22,13 @@ class Voice(commands.Cog):
         ]
         # Initialize the BERT question-answering model
         self.qa_pipeline = pipeline("question-answering", model="google-bert/bert-large-uncased-whole-word-masking-finetuned-squad")
-    
-    def text_to_speech(self, text):
-        tts = gTTS(text)
+        # Initialize translator for multilingual support
+        self.translator = Translator()
+        # Initialize feedback logs
+        self.feedback_log = []
+
+    def text_to_speech(self, text, lang='en'):
+        tts = gTTS(text, lang=lang)
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as tmp_file:
             tts.save(tmp_file.name)
             return tmp_file.name
@@ -45,6 +50,11 @@ class Voice(commands.Cog):
                 else:
                     raise e
         return None
+
+    def log_interaction(self, question, ai_response):
+        # Log the question and AI response for continuous learning
+        self.feedback_log.append({'question': question, 'response': ai_response})
+        logging.info(f"Logged interaction: Question: {question}, Response: {ai_response}")
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -70,13 +80,22 @@ class Voice(commands.Cog):
                         user_question = "What is the capital of France?"  # Placeholder, replace with actual audio recognition logic
                         context = "France is a country in Europe. Paris is its capital city."  # Example context
                         logging.info(f"Recognized question: {user_question}")
+
+                        # Translate question to English if necessary
+                        translated_question = self.translator.translate(user_question, dest='en').text
                         
                         # Generate AI response using question-answering
-                        ai_response = self.generate_ai_response(user_question, context)
+                        ai_response = self.generate_ai_response(translated_question, context)
                         logging.info(f"AI response: {ai_response}")
+
+                        # Log the interaction
+                        self.log_interaction(user_question, ai_response)
                         
+                        # Translate response back to user's language if necessary
+                        translated_response = self.translator.translate(ai_response, dest=self.translator.detect(user_question).lang).text
+
                         # Convert AI response to speech and play
-                        response_audio = self.text_to_speech(ai_response)
+                        response_audio = self.text_to_speech(translated_response)
                         vc.play(discord.FFmpegPCMAudio(response_audio))
                         
                         # Disconnect after playing the response
