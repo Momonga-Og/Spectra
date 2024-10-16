@@ -21,7 +21,7 @@ class Voice(commands.Cog):
         ]
         # Initialize the BERT question-answering model
         self.qa_pipeline = pipeline("question-answering", model="google-bert/bert-large-uncased-whole-word-masking-finetuned-squad")
-
+    
     def text_to_speech(self, text):
         tts = gTTS(text)
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as tmp_file:
@@ -52,46 +52,42 @@ class Voice(commands.Cog):
             guild_id = member.guild.id
             if guild_id not in self.blocked_users:
                 self.blocked_users[guild_id] = set()
-
             if not member.bot and member.id not in self.blocked_users[guild_id]:
                 try:
                     vc = await self.connect_to_channel(after.channel)
-                    
                     if vc and vc.is_connected():
                         # Welcome message
                         welcome_text = random.choice(self.welcome_messages).format(name=member.name)
                         audio_file = self.text_to_speech(welcome_text)
-
+                        
                         # Play welcome message
                         if not vc.is_playing():
                             vc.play(discord.FFmpegPCMAudio(audio_file))
                             while vc.is_playing():
                                 await asyncio.sleep(1)
-
+                        
                         # Listen for user question
                         user_question = "What is the capital of France?"  # Placeholder, replace with actual audio recognition logic
                         context = "France is a country in Europe. Paris is its capital city."  # Example context
                         logging.info(f"Recognized question: {user_question}")
-
+                        
                         # Generate AI response using question-answering
                         ai_response = self.generate_ai_response(user_question, context)
                         logging.info(f"AI response: {ai_response}")
-
+                        
                         # Convert AI response to speech and play
                         response_audio = self.text_to_speech(ai_response)
                         vc.play(discord.FFmpegPCMAudio(response_audio))
-
+                        
                         # Disconnect after playing the response
                         while vc.is_playing():
                             await asyncio.sleep(1)
-
                         if vc.is_connected():
                             await vc.disconnect()
-
+                        
                         # Clean up audio files
                         os.remove(audio_file)
                         os.remove(response_audio)
-
                 except Exception as e:
                     logging.exception(f"Error in on_voice_state_update: {e}")
 
