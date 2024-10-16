@@ -8,7 +8,7 @@ import random
 import speech_recognition as sr
 from transformers import pipeline
 import tempfile
-from googletrans import Translator  # Import for multilingual support
+from deep_translator import GoogleTranslator  # Import for multilingual support
 
 logging.basicConfig(level=logging.INFO)
 
@@ -23,7 +23,7 @@ class Voice(commands.Cog):
         # Initialize the BERT question-answering model
         self.qa_pipeline = pipeline("question-answering", model="google-bert/bert-large-uncased-whole-word-masking-finetuned-squad")
         # Initialize translator for multilingual support
-        self.translator = Translator()
+        self.translator = GoogleTranslator()
         # Initialize feedback logs
         self.feedback_log = []
 
@@ -82,7 +82,7 @@ class Voice(commands.Cog):
                         logging.info(f"Recognized question: {user_question}")
 
                         # Translate question to English if necessary
-                        translated_question = self.translator.translate(user_question, dest='en').text
+                        translated_question = self.translator.translate(user_question, target='en')
                         
                         # Generate AI response using question-answering
                         ai_response = self.generate_ai_response(translated_question, context)
@@ -92,7 +92,7 @@ class Voice(commands.Cog):
                         self.log_interaction(user_question, ai_response)
                         
                         # Translate response back to user's language if necessary
-                        translated_response = self.translator.translate(ai_response, dest=self.translator.detect(user_question).lang).text
+                        translated_response = self.translator.translate(ai_response, target=self.translator.detect(user_question).lang)
 
                         # Convert AI response to speech and play
                         response_audio = self.text_to_speech(translated_response)
