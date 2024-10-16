@@ -16,3 +16,4 @@ tensorflow
 tf-keras
 pyaudio
 deep-translator
+langdetect
