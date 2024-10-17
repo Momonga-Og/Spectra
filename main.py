@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 intents = discord.Intents.default()
 intents.message_content = True
+
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 OWNER_ID = 486652069831376943  # Keep the owner ID directly in the code as requested
@@ -61,7 +62,7 @@ EXTENSIONS = [
     'cogs.watermark_user', 'cogs.attack', 'cogs.new_users', 'cogs.role',
     'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.screenshot',
     'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession',
-    'cogs.realitycheck', 'cogs.super'
+    'cogs.realitycheck', 'cogs.super', 'cogs.pic'
 ]
 
 async def load_extensions():
