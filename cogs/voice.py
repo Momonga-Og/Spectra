@@ -61,32 +61,36 @@ class Voice(commands.Cog):
     async def on_voice_state_update(self, member, before, after):
         if before.channel is None and after.channel is not None:
             guild_id = member.guild.id
-            # Check if it's the specific server (Clash of Champions Episode 1)
-            if guild_id == 1296795292703784960:
-                if guild_id not in self.blocked_users:
-                    self.blocked_users[guild_id] = set()
-                if not member.bot and member.id not in self.blocked_users[guild_id]:
-                    try:
-                        vc = await self.connect_to_channel(after.channel)
-                        if vc and vc.is_connected():
-                            # Custom welcome message for this server
+            if guild_id not in self.blocked_users:
+                self.blocked_users[guild_id] = set()
+            if not member.bot and member.id not in self.blocked_users[guild_id]:
+                try:
+                    vc = await self.connect_to_channel(after.channel)
+                    if vc and vc.is_connected():
+                        # Check if the user joined the specific server (Clash of Champions Episode 1)
+                        if guild_id == 1296795292703784960:
+                            # Custom message for the Clash of Champions Episode 1 server
                             welcome_text = f"Hello {member.name}, welcome to {member.guild.name}. The Sheikh is very happy to have you here. Please have fun and be comfortable."
-                            audio_file = self.text_to_speech(welcome_text)
-                            
-                            # Play welcome message
-                            if not vc.is_playing():
-                                vc.play(discord.FFmpegPCMAudio(audio_file))
-                                while vc.is_playing():
-                                    await asyncio.sleep(1)
-                            
-                            # Disconnect after playing the response
-                            if vc.is_connected():
-                                await vc.disconnect()
-                            
-                            # Clean up audio files
-                            os.remove(audio_file)
-                    except Exception as e:
-                        logging.exception(f"Error in on_voice_state_update: {e}")
+                        else:
+                            # Generic message for other servers
+                            welcome_text = random.choice(self.welcome_messages).format(name=member.name)
+
+                        audio_file = self.text_to_speech(welcome_text)
+                        
+                        # Play welcome message
+                        if not vc.is_playing():
+                            vc.play(discord.FFmpegPCMAudio(audio_file))
+                            while vc.is_playing():
+                                await asyncio.sleep(1)
+                        
+                        # Disconnect after playing the response
+                        if vc.is_connected():
+                            await vc.disconnect()
+                        
+                        # Clean up audio files
+                        os.remove(audio_file)
+                except Exception as e:
+                    logging.exception(f"Error in on_voice_state_update: {e}")
 
     async def cog_unload(self):
         for vc in self.bot.voice_clients:
