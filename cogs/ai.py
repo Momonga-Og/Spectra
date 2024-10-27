@@ -3,7 +3,7 @@ from discord.ext import commands
 import requests
 import json
 
-# Using your provided Google Gemini API key
+# Replace with your actual Google Gemini API key
 API_KEY = 'AIzaSyB8kx3kPnaCJQtcXnZa-QnPS0uNgYIFwoM'
 
 class AI(commands.Cog):
@@ -39,15 +39,27 @@ class AI(commands.Cog):
         # Check if the response is successful
         if response.status_code == 200:
             result = response.json()
-            # Output the raw JSON response for debugging
-            print("API Response:", result)
+            # Print the raw JSON response for debugging
+            print("API Response:", json.dumps(result, indent=2))
 
-            # Extract AI response or show a message if the content structure is unexpected
+            # Try to find the AI response in the returned JSON
+            ai_response = ""
             try:
-                ai_response = result["contents"][0]["parts"][0]["text"]
+                # Flexible extraction to handle potential variations in response structure
+                if "contents" in result and result["contents"]:
+                    first_content = result["contents"][0]
+                    if "parts" in first_content and first_content["parts"]:
+                        ai_response = first_content["parts"][0].get("text", "Response found but text is missing.")
+                    else:
+                        ai_response = "Response found but parts are missing."
+                else:
+                    ai_response = "Response found but contents are missing."
+
                 await ctx.send(f"Spectra: {ai_response}")
-            except (IndexError, KeyError):
-                await ctx.send("Spectra: I couldn't find an answer in the expected format.")
+            except Exception as e:
+                # Catch any other parsing errors and provide feedback
+                print(f"Error while parsing response: {e}")
+                await ctx.send("Spectra: Unexpected response format received.")
         else:
             # Show the error message and status code for further investigation
             await ctx.send(f"Error: Unable to fetch a response from AI. Status code: {response.status_code}, Response: {response.text}")
