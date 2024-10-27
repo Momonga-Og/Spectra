@@ -3,19 +3,19 @@ from discord.ext import commands
 import requests
 import json
 
-# Replace 'YOUR_API_KEY' with your Google Gemini API key
+# Replace 'YOUR_API_KEY' with your actual Google Gemini API key
 API_KEY = 'AIzaSyB8kx3kPnaCJQtcXnZa-QnPS0uNgYIFwoM'
 
 class AI(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.slash_command(name="ai", description="Start a conversation with Spectra using AI.")
-    async def ai(self, ctx, prompt: str):
-        # Send a message to indicate processing
-        await ctx.respond("Thinking...")
+    @commands.hybrid_command(name="ai", description="Start a conversation with Spectra using AI.")
+    async def ai(self, ctx: commands.Context, *, prompt: str):
+        # Notify the user that the bot is processing their request
+        await ctx.send("Thinking...")
 
-        # Define the request payload
+        # Define the request payload for the AI API
         payload = {
             "contents": [
                 {
@@ -28,7 +28,7 @@ class AI(commands.Cog):
             ]
         }
 
-        # Set up the headers and send the request to Google Gemini
+        # Set up headers and URL, then send the request to Google Gemini API
         headers = {
             'Content-Type': 'application/json'
         }
@@ -44,5 +44,5 @@ class AI(commands.Cog):
         else:
             await ctx.send("Error: Unable to fetch a response from AI.")
 
-def setup(bot):
-    bot.add_cog(AI(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(AI(bot))
