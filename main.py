@@ -12,7 +12,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-OWNER_ID = 486652069831376943  # Keep the owner ID directly in the code as requested
+OWNER_ID = 486652069831376943  # Owner ID as requested
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
 async def close_sessions():
@@ -62,7 +62,7 @@ EXTENSIONS = [
     'cogs.watermark_user', 'cogs.attack', 'cogs.new_users', 'cogs.role',
     'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.screenshot',
     'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession',
-    'cogs.realitycheck', 'cogs.super', 'cogs.pic'
+    'cogs.realitycheck', 'cogs.super', 'cogs.pic', 'cogs.ai'  # Added 'cogs.ai'
 ]
 
 async def load_extensions():
@@ -72,11 +72,6 @@ async def load_extensions():
             logger.info(f"Loaded extension: {extension}")
         except Exception as e:
             logger.exception(f"Failed to load extension {extension}")
-
-@bot.command(name='ai', help='Generates text using Hugging Face.')
-async def ai(ctx, *, prompt: str):
-    response = await generate_text(prompt)
-    await ctx.send(response)
 
 async def main():
     async with bot:
