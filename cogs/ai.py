@@ -3,7 +3,7 @@ from discord.ext import commands
 import requests
 import json
 
-# Replace 'YOUR_API_KEY' with your actual Google Gemini API key
+# Using your provided Google Gemini API key
 API_KEY = 'AIzaSyB8kx3kPnaCJQtcXnZa-QnPS0uNgYIFwoM'
 
 class AI(commands.Cog):
@@ -12,7 +12,7 @@ class AI(commands.Cog):
 
     @commands.hybrid_command(name="ai", description="Start a conversation with Spectra using AI.")
     async def ai(self, ctx: commands.Context, *, prompt: str):
-        # Notify the user that the bot is processing their request
+        # Notify the user that the bot is processing the request
         await ctx.send("Thinking...")
 
         # Define the request payload for the AI API
