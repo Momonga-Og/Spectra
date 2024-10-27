@@ -39,10 +39,18 @@ class AI(commands.Cog):
         # Check if the response is successful
         if response.status_code == 200:
             result = response.json()
-            ai_response = result.get("contents", [{}])[0].get("parts", [{}])[0].get("text", "I couldn't find an answer.")
-            await ctx.send(f"Spectra: {ai_response}")
+            # Output the raw JSON response for debugging
+            print("API Response:", result)
+
+            # Extract AI response or show a message if the content structure is unexpected
+            try:
+                ai_response = result["contents"][0]["parts"][0]["text"]
+                await ctx.send(f"Spectra: {ai_response}")
+            except (IndexError, KeyError):
+                await ctx.send("Spectra: I couldn't find an answer in the expected format.")
         else:
-            await ctx.send("Error: Unable to fetch a response from AI.")
+            # Show the error message and status code for further investigation
+            await ctx.send(f"Error: Unable to fetch a response from AI. Status code: {response.status_code}, Response: {response.text}")
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(AI(bot))
