@@ -70,7 +70,7 @@ class Voice(commands.Cog):
                         # Check if the user joined the specific server (Clash of Champions Episode 1)
                         if guild_id == 1296795292703784960:
                             # Custom message for the Clash of Champions Episode 1 server
-                            welcome_text = f"Hello {member.name}, welcome to {member.guild.name}. The Sheikh is very happy to have you here. Please have fun and be comfortable."
+                            welcome_text = f"Hello {member.name}, welcome to {member.guild.name}."
                         else:
                             # Generic message for other servers
                             welcome_text = random.choice(self.welcome_messages).format(name=member.name)
