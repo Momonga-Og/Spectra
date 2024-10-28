@@ -3,6 +3,7 @@ from discord.ext import commands
 import os
 import asyncio
 import logging
+import sqlite3
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -12,9 +13,28 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-OWNER_ID = 486652069831376943  # Owner ID as requested
+OWNER_ID = 486652069831376943  # Your Discord ID for owner/admin commands
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
+# Database setup: Initialize SQLite for conversation history
+def init_db():
+    db_path = 'conversation_history.db'
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS conversation (
+            user_id INTEGER,
+            prompt TEXT,
+            response TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Initialize database on bot start
+init_db()
+
+# Ensure the database connection opens on bot startup and closes when the bot stops
 async def close_sessions():
     await bot.session.close()
 
@@ -62,7 +82,7 @@ EXTENSIONS = [
     'cogs.watermark_user', 'cogs.attack', 'cogs.new_users', 'cogs.role',
     'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.screenshot',
     'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession',
-    'cogs.realitycheck', 'cogs.super', 'cogs.pic', 'cogs.ai'  # Added 'cogs.ai'
+    'cogs.realitycheck', 'cogs.super', 'cogs.pic', 'cogs.ai'  # Make sure 'cogs.ai' is properly set up
 ]
 
 async def load_extensions():
