@@ -48,8 +48,10 @@ class AI(commands.Cog):
                 ai_response = f"Spectra: API error - {error_message}"
             else:
                 ai_response = "Spectra: Unexpected response structure."
-
-            await ctx.send(f"Spectra: {ai_response}")
+            
+            # Split the response into chunks of 2000 characters if it's too long
+            for chunk in [ai_response[i:i+2000] for i in range(0, len(ai_response), 2000)]:
+                await ctx.send(f"Spectra: {chunk}")
         else:
             await ctx.send(f"Error: Unable to fetch a response from AI. Status code: {response.status_code}, Response: {response.text}")
 
