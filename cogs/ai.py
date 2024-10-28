@@ -28,10 +28,10 @@ class AI(commands.Cog):
         headers = {
             'Content-Type': 'application/json'
         }
-        
+
         url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={API_KEY}'
         response = requests.post(url, headers=headers, data=json.dumps(payload))
-        
+
         if response.status_code == 200:
             result = response.json()
             
@@ -48,10 +48,13 @@ class AI(commands.Cog):
                 ai_response = f"Spectra: API error - {error_message}"
             else:
                 ai_response = "Spectra: Unexpected response structure."
+
+            # Split response into chunks of up to 1900 characters
+            max_length = 1900
+            chunks = [ai_response[i:i + max_length] for i in range(0, len(ai_response), max_length)]
             
-            # Split the response into chunks of 2000 characters if it's too long
-            for chunk in [ai_response[i:i+2000] for i in range(0, len(ai_response), 2000)]:
-                await ctx.send(f"Spectra: {chunk}")
+            for chunk in chunks:
+                await ctx.send(chunk)
         else:
             await ctx.send(f"Error: Unable to fetch a response from AI. Status code: {response.status_code}, Response: {response.text}")
 
