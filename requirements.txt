@@ -17,4 +17,3 @@ tf-keras
 pyaudio
 deep-translator
 langdetect
-sqlite3
