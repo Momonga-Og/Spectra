@@ -35,14 +35,12 @@ class AI(commands.Cog):
         if response.status_code == 200:
             result = response.json()
             
-            # Debug line to print the full JSON response to see its structure
-            await ctx.send(f"Debugging Response JSON: ```{json.dumps(result, indent=2)}```")
-
-            # Attempt to extract AI response
-            if "contents" in result and result["contents"]:
-                first_content = result["contents"][0]
-                if "parts" in first_content and first_content["parts"]:
-                    ai_response = first_content["parts"][0].get("text", "Response text is missing.")
+            # Attempt to extract AI response from `candidates`
+            if "candidates" in result and result["candidates"]:
+                first_candidate = result["candidates"][0]
+                content = first_candidate.get("content", {})
+                if "parts" in content and content["parts"]:
+                    ai_response = content["parts"][0].get("text", "Response text is missing.")
                 else:
                     ai_response = "Spectra: Response found but parts are missing."
             elif "error" in result:
@@ -51,7 +49,7 @@ class AI(commands.Cog):
             else:
                 ai_response = "Spectra: Unexpected response structure."
 
-            await ctx.send(ai_response)
+            await ctx.send(f"Spectra: {ai_response}")
         else:
             await ctx.send(f"Error: Unable to fetch a response from AI. Status code: {response.status_code}, Response: {response.text}")
 
