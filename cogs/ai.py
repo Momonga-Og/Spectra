@@ -8,17 +8,29 @@ API_KEY = 'AIzaSyB8kx3kPnaCJQtcXnZa-QnPS0uNgYIFwoM'
 class AI(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        # Dictionary to store conversation history per user
+        self.user_memory = {}
 
     @commands.hybrid_command(name="ai", description="Start a conversation with Spectra using AI.")
     async def ai(self, ctx: commands.Context, *, prompt: str):
-        await ctx.send("Thinking...")
+        user_id = ctx.author.id
+
+        # Initialize memory for the user if it doesn't exist
+        if user_id not in self.user_memory:
+            self.user_memory[user_id] = []
+
+        # Add the new prompt to the user's memory
+        self.user_memory[user_id].append(f"User: {prompt}")
+
+        # Construct the conversation history as input
+        conversation_history = "\n".join(self.user_memory[user_id])
 
         payload = {
             "contents": [
                 {
                     "parts": [
                         {
-                            "text": prompt
+                            "text": conversation_history
                         }
                     ]
                 }
@@ -35,7 +47,7 @@ class AI(commands.Cog):
         if response.status_code == 200:
             result = response.json()
             
-            # Attempt to extract AI response from `candidates`
+            # Extract AI response
             if "candidates" in result and result["candidates"]:
                 first_candidate = result["candidates"][0]
                 content = first_candidate.get("content", {})
@@ -48,6 +60,9 @@ class AI(commands.Cog):
                 ai_response = f"Spectra: API error - {error_message}"
             else:
                 ai_response = "Spectra: Unexpected response structure."
+
+            # Add AI response to user's memory
+            self.user_memory[user_id].append(f"Spectra: {ai_response}")
 
             # Split response into chunks of up to 1900 characters
             max_length = 1900
