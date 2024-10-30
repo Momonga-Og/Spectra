@@ -1,47 +1,42 @@
-import discord
+ import discord
 from discord.ext import commands
 import os
 import asyncio
-import json
 import logging
+import sqlite3
 
-# Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Define intents for the bot
 intents = discord.Intents.default()
 intents.message_content = True
 
-# Create the bot instance
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-# Owner ID for administrative commands
 OWNER_ID = 486652069831376943  # Your Discord ID for owner/admin commands
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
-# File name for conversation history
-HISTORY_FILE = 'conversation_history.json'
+# Database setup: Initialize SQLite for conversation history
+def init_db():
+    db_path = 'conversation_history.db'
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS conversation (
+            user_id INTEGER,
+            prompt TEXT,
+            response TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-# Initialize the conversation history file
-def init_conversation_history():
-    if not os.path.exists(HISTORY_FILE):
-        with open(HISTORY_FILE, 'w') as f:
-            json.dump([], f)  # Start with an empty list
-        logger.info("Initialized conversation history file.")
+# Initialize database on bot start
+init_db()
 
-# Load conversation history from JSON file
-def load_conversation_history():
-    with open(HISTORY_FILE, 'r') as f:
-        return json.load(f)
-
-# Save conversation history to JSON file
-def save_conversation_history(history):
-    with open(HISTORY_FILE, 'w') as f:
-        json.dump(history, f, indent=4)
-
-# Initialize the conversation history on bot start
-init_conversation_history()
+# Ensure the database connection opens on bot startup and closes when the bot stops
+async def close_sessions():
+    await bot.session.close()
 
 @bot.event
 async def on_ready():
@@ -61,24 +56,12 @@ async def sync_commands():
 async def on_message(message: discord.Message):
     if isinstance(message.channel, discord.DMChannel) and message.author != bot.user:
         await forward_dm(message)
-        await save_conversation(message)  # Save the conversation to JSON
     await bot.process_commands(message)
 
 async def forward_dm(message: discord.Message):
     owner = await bot.fetch_user(OWNER_ID)
     if owner:
         await owner.send(f"Message from {message.author}: {message.content}")
-
-async def save_conversation(message: discord.Message):
-    history = load_conversation_history()
-    entry = {
-        "user_id": message.author.id,
-        "prompt": message.content,
-        "response": "N/A"  # Placeholder for response; you can modify this as needed
-    }
-    history.append(entry)
-    save_conversation_history(history)
-    logger.info("Saved conversation to history.")
 
 @bot.event
 async def on_disconnect():
@@ -91,10 +74,15 @@ async def on_error(event: str, *args, **kwargs):
 @bot.event
 async def on_close():
     logger.info("Bot is closing")
+    await close_sessions()
 
-# Load cogs/extensions (you can add your cogs here)
 EXTENSIONS = [
-    'cogs.ai'  # Add any other cogs you have here
+    'cogs.general', 'cogs.moderation', 'cogs.poll', 'cogs.admin', 'cogs.voice',
+    'cogs.relocate', 'cogs.watermark', 'cogs.serverstats', 'cogs.talk', 'cogs.write',
+    'cogs.watermark_user', 'cogs.attack', 'cogs.new_users', 'cogs.role',
+    'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.screenshot',
+    'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession',
+    'cogs.realitycheck', 'cogs.super', 'cogs.pic', 'cogs.ai'  # Make sure 'cogs.ai' is properly set up
 ]
 
 async def load_extensions():
