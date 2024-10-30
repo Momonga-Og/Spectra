@@ -1,9 +1,12 @@
-Deploy Discord Bot
+name: Deploy Discord Bot
 
 on:
   push:
     branches:
       - main  # Adjust to your target branch
+  schedule:
+    - cron: '0 * * * *'  # Commits changes every hour
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -11,22 +14,22 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3  # Ensure the repository is checked out
+        uses: actions/checkout@v3
 
       - name: Install FFmpeg (Optional)
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg  # Install FFmpeg (if needed)
+          sudo apt-get install -y ffmpeg
 
       - name: Install PortAudio
         run: |
           sudo apt-get update
-          sudo apt-get install -y portaudio19-dev  # Install PortAudio development files
+          sudo apt-get install -y portaudio19-dev
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'  # Specify your required Python version
+          python-version: '3.10'
 
       - name: Cache pip dependencies (Optional)
         uses: actions/cache@v3
@@ -38,14 +41,24 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m venv venv  # Create a virtual environment
-          source venv/bin/activate  # Activate the virtual environment
-          python -m pip install --upgrade pip  # Upgrade pip to ensure latest version
-          pip install -r requirements.txt  # Install packages from requirements.txt
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
 
       - name: Run the bot
         env:
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}  # Use the secret stored in GitHub
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
         run: |
-          source venv/bin/activate  # Activate the virtual environment
-          python main.py  # Start your Discord bot
+          source venv/bin/activate
+          python main.py
+
+      - name: Commit conversation history
+        if: success()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          if [ -f conversation_history.json ]; then
+            git add conversation_history.json
+            git commit -m "Update conversation history"
+            git push
+          fi
