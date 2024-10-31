@@ -1,11 +1,11 @@
- import discord
+import discord
 from discord.ext import commands
 import requests
 import json
 import sqlite3
 
 API_KEY = 'AIzaSyB8kx3kPnaCJQtcXnZa-QnPS0uNgYIFwoM'
-ADMIN_USER_ID = 486652069831376943  # Only Abdellatif can use administrative commands
+ADMIN_USER_ID = 486652069831376943  
 
 class SpectraAI(commands.Cog):
     def __init__(self, bot):
@@ -22,31 +22,27 @@ class SpectraAI(commands.Cog):
         self.conn.commit()
 
     def store_conversation(self, user_id, prompt, response):
-        self.cursor.execute('INSERT INTO conversation (user_id, prompt, response) VALUES (?, ?, ?)',
-                            (user_id, prompt, response))
+        self.cursor.execute(
+            'INSERT INTO conversation (user_id, prompt, response) VALUES (?, ?, ?)',
+            (user_id, prompt, response)
+        )
         self.conn.commit()
 
     def get_conversation_history(self, user_id):
-        self.cursor.execute('SELECT prompt, response FROM conversation WHERE user_id = ? ORDER BY rowid DESC LIMIT 5', (user_id,))
+        self.cursor.execute(
+            'SELECT prompt, response FROM conversation WHERE user_id = ? ORDER BY rowid DESC LIMIT 5',
+            (user_id,)
+        )
         rows = self.cursor.fetchall()
         return "\n".join([f"User: {row[0]}\nAI: {row[1]}" for row in rows])
 
     async def process_ai_instruction(self, ctx, ai_response):
-        # Process AI instructions only if it's an administrative action and from the admin user
         if ctx.author.id == ADMIN_USER_ID:
-            if "ban" in ai_response or "role" in ai_response or "mute" in ai_response:
-                # Parse and execute the admin command as necessary
-                # Example:
+            if any(command in ai_response for command in ["ban", "role", "mute"]):
                 return f"Executing admin command: {ai_response}"
-        return None  # If not an admin command or if user is not admin
+        return None
 
-    async def execute_spectra_command(self, ctx, command_name, *args):
-        # Execute Spectra commands as per AI response or user request
-        ...
-
-    @commands.hybrid_command(name="ai", description="Ask Spectra AI for assistance.")
-    async def ai(self, ctx: commands.Context, *, prompt: str):
-        user_id = ctx.author.id
+    async def fetch_ai_response(self, prompt, user_id):
         conversation_history = self.get_conversation_history(user_id)
         conversation_history += f"\nUser: {prompt}"
 
@@ -82,19 +78,40 @@ class SpectraAI(commands.Cog):
             else:
                 ai_response = "Spectra: Unexpected response structure."
 
-            ai_response = ai_response[:1900]
-
+            ai_response = ai_response[:1900]  # Truncate if too long
             self.store_conversation(user_id, prompt, ai_response)
-
-            # Check for administrative instruction
-            admin_response = await self.process_ai_instruction(ctx, ai_response)
-            if admin_response:
-                await ctx.send(admin_response)
-            else:
-                # Handle non-administrative response for everyone
-                await ctx.send(ai_response)
+            return ai_response
         else:
-            await ctx.send(f"Error: Unable to fetch a response from AI. Status code: {response.status_code}, Response: {response.text}")
+            return f"Error: Unable to fetch a response from AI. Status code: {response.status_code}, Response: {response.text}"
+
+    @commands.hybrid_command(name="ai", description="Ask Spectra AI for assistance.")
+    async def ai(self, ctx: commands.Context, *, prompt: str):
+        ai_response = await self.fetch_ai_response(prompt, ctx.author.id)
+
+        # Check for administrative instruction
+        admin_response = await self.process_ai_instruction(ctx, ai_response)
+        if admin_response:
+            await ctx.send(admin_response)
+        else:
+            await ctx.send(ai_response)
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author == self.bot.user:
+            return  # Ignore messages from the bot itself
+
+        if self.bot.user.mentioned_in(message):
+            # Strip the mention and pass the rest as the prompt
+            prompt = message.content.replace(self.bot.user.mention, "").strip()
+            if prompt:
+                ai_response = await self.fetch_ai_response(prompt, message.author.id)
+
+                # Check for admin instructions if the user is the admin
+                admin_response = await self.process_ai_instruction(message, ai_response)
+                if admin_response:
+                    await message.channel.send(admin_response)
+                else:
+                    await message.channel.send(ai_response)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(SpectraAI(bot))
