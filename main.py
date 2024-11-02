@@ -4,6 +4,7 @@ import os
 import asyncio
 import logging
 import sqlite3
+import sys
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -13,8 +14,26 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-OWNER_ID = 486652069831376943  # Your Discord ID for owner/admin commands
+OWNER_ID = 486652069831376943  
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
+
+LOCK_FILE = 'bot.lock'
+
+# Function to check if the bot is already running
+def check_lock():
+    if os.path.exists(LOCK_FILE):
+        logger.info("Bot is already running. Exiting...")
+        sys.exit()
+
+# Function to create a lock file
+def create_lock():
+    with open(LOCK_FILE, 'w') as f:
+        f.write('locked')
+
+# Function to remove the lock file
+def remove_lock():
+    if os.path.exists(LOCK_FILE):
+        os.remove(LOCK_FILE)
 
 # Database setup: Initialize SQLite for conversation history
 def init_db():
@@ -33,10 +52,6 @@ def init_db():
 
 # Initialize database on bot start
 init_db()
-
-# Ensure the database connection opens on bot startup and closes when the bot stops
-async def close_sessions():
-    await bot.session.close()
 
 @bot.event
 async def on_ready():
@@ -94,6 +109,9 @@ async def load_extensions():
             logger.exception(f"Failed to load extension {extension}")
 
 async def main():
+    check_lock()  # Check for existing lock
+    create_lock()  # Create a lock file
+
     async with bot:
         await load_extensions()
         if not TOKEN:
@@ -105,11 +123,15 @@ async def main():
             logger.error("Invalid token")
         except Exception as e:
             logger.exception("Failed to start the bot")
+        finally:
+            remove_lock()  # Ensure lock is removed when done
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("Bot stopped by user")
+        remove_lock()  # Clean up on exit
     except Exception as e:
         logger.exception("Bot encountered an error and stopped")
+        remove_lock()  # Clean up on error
