@@ -40,18 +40,21 @@ def init_db():
     db_path = 'conversation_history.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS conversation (
-            user_id INTEGER,
-            prompt TEXT,
-            response TEXT
-        )
-    ''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS conversation (user_id INTEGER, prompt TEXT, response TEXT)''')
     conn.commit()
     conn.close()
 
 # Initialize database on bot start
 init_db()
+
+# Function to read memory file
+def read_memory_file():
+    try:
+        with open('memory.txt', 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        logger.error("Memory file not found.")
+        return None
 
 @bot.event
 async def on_ready():
@@ -66,6 +69,14 @@ async def sync_commands():
             bot.synced = True
         except Exception as e:
             logger.exception("Failed to sync commands")
+
+@bot.command(name='memory')
+async def memory_command(ctx):
+    memory_content = read_memory_file()
+    if memory_content:
+        await ctx.send(f"Memory:\n```\n{memory_content}\n```")
+    else:
+        await ctx.send("Could not read memory.")
 
 @bot.event
 async def on_message(message: discord.Message):
