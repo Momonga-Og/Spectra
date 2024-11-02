@@ -20,29 +20,30 @@ class TranslatorCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
-        print("Reaction detected!")  # Debug: Check if a reaction was detected
-        
+        # Ignore reactions added by bots or the message author
         if user.bot or reaction.message.author == user:
-            print("Ignored reaction by bot or author.")  # Debug
             return
 
-        # Check if the emoji is recognized in LANGUAGE_MAP
+        # Check if the emoji corresponds to a supported language
         language_code = self.LANGUAGE_MAP.get(str(reaction.emoji))
-        print(f"Emoji: {reaction.emoji}, Language Code: {language_code}")  # Debug
-        
         if not language_code:
-            print("Emoji not supported.")  # Debug
             return  # Exit if the emoji is not a supported flag
 
+        # Get the original message content
         original_text = reaction.message.content
-        print(f"Original text: {original_text}")  # Debug
 
         try:
             # Translate the text
             translation = self.translator.translate(original_text, dest=language_code)
             translated_text = translation.text
-            await reaction.message.reply(f"Translation ({language_code.upper()}): {translated_text}")
-            print("Translation sent!")  # Debug
+            source_lang = translation.src.upper()  # Get the source language code in uppercase
+
+            # Send a reply with the translation, formatted as in the example
+            await reaction.message.reply(
+                f"**From {source_lang} To {language_code.upper()}**:\n{translated_text}\n\n"
+                f"Translation requested by {user.mention} from Flag-Reaction Feature."
+            )
+
         except Exception as e:
             print(f"Error: {e}")
             await reaction.message.channel.send("An error occurred while translating the message.")
