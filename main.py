@@ -47,13 +47,18 @@ def init_db():
 # Initialize database on bot start
 init_db()
 
-# Function to read memory file
 def read_memory_file():
+    logger.info("Attempting to read memory.txt...")
     try:
         with open('memory.txt', 'r') as f:
-            return f.read()
+            content = f.read()
+            logger.info("Memory file read successfully.")
+            return content
     except FileNotFoundError:
         logger.error("Memory file not found.")
+        return None
+    except Exception as e:
+        logger.error(f"An error occurred while reading the memory file: {e}")
         return None
 
 @bot.event
