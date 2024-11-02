@@ -17,3 +17,4 @@ tf-keras
 pyaudio
 deep-translator
 langdetect
+googletrans
