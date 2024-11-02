@@ -10,11 +10,11 @@ class TranslatorCog(commands.Cog):
         self.translator = Translator()
         # Define flag emojis and their corresponding language codes
         self.LANGUAGE_MAP = {
-            "🇺🇸": "en",  # English
-            "🇫🇷": "fr",  # French
-            "🇪🇸": "es",  # Spanish
-            "🇦🇪": "ar",  # Arabic
-            "🇩🇪": "de",  # German
+            ":flag_us:": "en",  # English
+            ":flag_fr:": "fr",  # French
+            ":flag_es:": "es",  # Spanish
+            ":flag_ar:": "ar",  # Arabic
+            ":flag_de:": "de",  # German
             # Add more languages as needed
         }
 
