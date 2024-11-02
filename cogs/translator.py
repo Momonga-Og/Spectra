@@ -8,13 +8,13 @@ class TranslatorCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.translator = Translator()
-        # Define flag emojis and their corresponding language codes
+        # Define Unicode flag emojis and corresponding language codes
         self.LANGUAGE_MAP = {
-            ":flag_us:": "en",  # English
-            ":flag_fr:": "fr",  # French
-            ":flag_es:": "es",  # Spanish
-            ":flag_ar:": "ar",  # Arabic
-            ":flag_de:": "de",  # German
+            "🇺🇸": "en",  # English (US)
+            "🇫🇷": "fr",  # French
+            "🇪🇸": "es",  # Spanish
+            "🇦🇪": "ar",  # Arabic
+            "🇩🇪": "de",  # German
             # Add more languages as needed
         }
 
