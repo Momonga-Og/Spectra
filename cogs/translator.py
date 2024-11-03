@@ -63,22 +63,22 @@ class TranslatorCog(commands.Cog):
             source_lang = translation.src.upper()
             print(f"Translation successful: '{original_text}' from {source_lang} to {language_code.upper()} -> '{translated_text}'")
 
-            # Send translation to Discord
-            await reaction.message.reply(
-                f"**From {source_lang} To {language_code.upper()}**:\n{translated_text}\n\n"
-                f"Translation requested by {user.mention}."
+            # Send the translated message in the same channel, tagging the user
+            await channel.send(
+                f"{user.mention} requested a translation:\n"
+                f"**From {source_lang} To {language_code.upper()}**:\n{translated_text}"
             )
 
         except Exception as e:
             error_message = f"Translation failed: {e}"
             print(error_message)
 
-            # Send error to Discord (in the same channel for visibility)
+            # Send error message in the same channel for immediate feedback
             await channel.send(
                 "An error occurred while translating the message. Please try again or contact support."
             )
 
-            # Optionally, send error details to an admin channel for troubleshooting
+            # Optionally, send error details to an admin channel for tracking
             # error_channel_id = 123456789012345678  # Replace with your actual channel ID
             # error_channel = bot.get_channel(error_channel_id)
             # if error_channel:
