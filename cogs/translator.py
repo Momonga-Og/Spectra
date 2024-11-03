@@ -8,73 +8,81 @@ class TranslatorCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         try:
+            # Initialize the Translator and test it with a basic translation
             self.translator = Translator()
-            print("Translator initialized successfully.")
+            test_translation = self.translator.translate("Hello", dest="es")
+            print(f"Translator initialized successfully. Test translation: 'Hello' to Spanish -> '{test_translation.text}'")
         except Exception as e:
             print(f"Error initializing Translator: {e}")
 
-        # Define Unicode flag emojis and corresponding language codes
+        # Language map for reactions
         self.LANGUAGE_MAP = {
-            "🇺🇸": "en",  # English (US)
+            "🇺🇸": "en",  # English
             "🇫🇷": "fr",  # French
             "🇪🇸": "es",  # Spanish
-            ":flag_es:": "es",  # Spanish (Emoji code)
+            ":flag_es:": "es",  # Spanish (emoji code version)
             "🇦🇪": "ar",  # Arabic
             "🇩🇪": "de",  # German
-            # Add more languages as needed
+            # Add other languages if necessary
         }
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
-        # Check permissions
-        try:
-            if not reaction.message.channel.permissions_for(reaction.message.guild.me).read_message_history:
-                print("Bot lacks permission to read message history.")
-                return
-            if not reaction.message.channel.permissions_for(reaction.message.guild.me).send_messages:
-                print("Bot lacks permission to send messages.")
-                return
-        except AttributeError as e:
-            print(f"Permission error: {e}")
+        print("Reaction detected.")  # Confirm reaction is detected
+
+        # Check permissions explicitly
+        channel = reaction.message.channel
+        bot_member = channel.guild.me
+        if not channel.permissions_for(bot_member).read_message_history:
+            print("Bot lacks 'read_message_history' permission.")
+            return
+        if not channel.permissions_for(bot_member).send_messages:
+            print("Bot lacks 'send_messages' permission.")
             return
 
-        # Ignore reactions added by bots or the message author
+        # Ignore if reaction is from a bot or from the message author
         if user.bot or reaction.message.author == user:
-            print("Ignoring bot reaction or message author reaction.")
+            print("Ignoring reaction from bot or message author.")
             return
 
-        # Determine language from emoji
+        # Check if emoji corresponds to a supported language
         emoji_used = str(reaction.emoji)
         language_code = self.LANGUAGE_MAP.get(emoji_used)
         if not language_code:
-            print(f"Unsupported emoji: {emoji_used}")
-            return  # Unsupported flag
+            print(f"Unsupported emoji detected: {emoji_used}")
+            return
+
+        # Log the message content and target language
+        original_text = reaction.message.content
+        print(f"Attempting to translate message: '{original_text}' to {LANGUAGES.get(language_code, 'unknown language')}.")
 
         # Attempt translation
-        original_text = reaction.message.content
-        print(f"Attempting to translate message '{original_text}' to {LANGUAGES.get(language_code, 'unknown language')}.")
-
         try:
-            # Perform translation
             translation = self.translator.translate(original_text, dest=language_code)
             translated_text = translation.text
-            source_lang = translation.src.upper()  # Get the source language code in uppercase
-            print(f"Translated from {source_lang} to {language_code.upper()} successfully.")
+            source_lang = translation.src.upper()
+            print(f"Translation successful: '{original_text}' from {source_lang} to {language_code.upper()} -> '{translated_text}'")
 
-            # Send reply with translation
+            # Send translation to Discord
             await reaction.message.reply(
                 f"**From {source_lang} To {language_code.upper()}**:\n{translated_text}\n\n"
-                f"Translation requested by {user.mention} from Flag-Reaction Feature."
+                f"Translation requested by {user.mention}."
             )
 
         except Exception as e:
-            error_msg = f"Translation error: {e}"
-            print(error_msg)
+            error_message = f"Translation failed: {e}"
+            print(error_message)
 
-            # Send error message to Discord for better debugging
-            await reaction.message.channel.send(
-                "An error occurred while translating the message. Please check logs or contact support."
+            # Send error to Discord (in the same channel for visibility)
+            await channel.send(
+                "An error occurred while translating the message. Please try again or contact support."
             )
+
+            # Optionally, send error details to an admin channel for troubleshooting
+            # error_channel_id = 123456789012345678  # Replace with your actual channel ID
+            # error_channel = bot.get_channel(error_channel_id)
+            # if error_channel:
+            #     await error_channel.send(f"Translation error in {channel.name} by {user.name}: {error_message}")
 
 async def setup(bot):
     await bot.add_cog(TranslatorCog(bot))
