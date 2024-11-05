@@ -18,3 +18,4 @@ pyaudio
 deep-translator
 langdetect
 googletrans == 4.0.0-rc1
+redis
