@@ -31,6 +31,11 @@ class TranslatorCog(commands.Cog):
         # Confirm reaction detection
         print("Reaction detected.")
 
+        # Check if the bot should act on this reaction
+        if user.bot:
+            print("Ignoring reaction from a bot.")
+            return
+
         # Check permissions for reading message history and sending messages
         channel = reaction.message.channel
         bot_permissions = channel.permissions_for(channel.guild.me)
@@ -41,11 +46,6 @@ class TranslatorCog(commands.Cog):
             print("Bot lacks 'send_messages' permission.")
             return
 
-        # Ignore reactions from bots or the author of the message
-        if user.bot or reaction.message.author == user:
-            print("Ignoring reaction from a bot or the message author.")
-            return
-
         # Check if the emoji used corresponds to a supported language
         emoji_used = str(reaction.emoji)
         language_code = self.LANGUAGE_MAP.get(emoji_used)
@@ -53,12 +53,13 @@ class TranslatorCog(commands.Cog):
             print(f"Unsupported emoji detected: {emoji_used}")
             return
 
-        # Log the translation attempt
+        # Ensure the message contains text
         original_text = reaction.message.content.strip()
         if not original_text:
             print("Message content is empty or non-text. Skipping.")
             return
 
+        # Log the translation attempt
         print(f"Translating message: '{original_text}' to {LANGUAGES.get(language_code, 'unknown language')}.")
 
         # Translate the text
