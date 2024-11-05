@@ -113,7 +113,7 @@ EXTENSIONS = [
     'cogs.watermark_user', 'cogs.attack', 'cogs.new_users', 'cogs.role',
     'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.screenshot',
     'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession',
-    'cogs.realitycheck', 'cogs.super', 'cogs.pic', 'cogs.ai', 'cogs.translator' 
+    'cogs.realitycheck', 'cogs.super', 'cogs.pic', 'cogs.ai', 'cogs.translator', 'cogs.lock' 
 ]
 
 async def load_extensions():
