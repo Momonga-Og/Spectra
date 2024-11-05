@@ -17,4 +17,4 @@ tf-keras
 pyaudio
 deep-translator
 langdetect
-googletrans
+googletrans == 4.0.0-rc1
