@@ -1,27 +1,20 @@
-# lock.py
-
 import asyncio
+import redis
 from discord.ext import commands
 
 class EventLockCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # Dictionary to store event locks
-        self.event_locks = {}
+        # Connect to Redis (adjust host/port as needed)
+        self.redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
     async def is_event_handled(self, event_key: str) -> bool:
-        """Check if an event has been handled."""
-        return self.event_locks.get(event_key, False)
+        """Check if an event has been handled in Redis."""
+        return self.redis_client.exists(event_key)
 
-    async def set_event_handled(self, event_key: str):
-        """Mark an event as handled."""
-        self.event_locks[event_key] = True
-
-    async def clear_event_lock(self, event_key: str, duration: int = 10):
-        """Clear the lock after a certain duration."""
-        await asyncio.sleep(duration)
-        if event_key in self.event_locks:
-            del self.event_locks[event_key]
+    async def set_event_handled(self, event_key: str, duration: int = 10):
+        """Mark an event as handled in Redis with an expiration time."""
+        self.redis_client.set(event_key, "handled", ex=duration)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
@@ -41,9 +34,8 @@ class EventLockCog(commands.Cog):
             print(f"Handling reaction event {event_key}")
             # Example: Processing the reaction event (adjust as needed)
             await reaction.message.channel.send(f"{user.mention} reacted with {reaction.emoji}")
-        finally:
-            # Clear the event lock after a set time to allow future handling if necessary
-            await self.clear_event_lock(event_key, duration=10)
+        except Exception as e:
+            print(f"Error handling event {event_key}: {e}")
 
 async def setup(bot):
     await bot.add_cog(EventLockCog(bot))
