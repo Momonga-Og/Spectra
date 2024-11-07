@@ -1,16 +1,30 @@
-# Imcoming
-Discord Bot 
-Name: Imcoming Bot
-Purpose
-The Imcoming Bot is designed to enhance the experience of Discord users by providing text-to-speech functionality and voice channel automation. It can greet users who join voice channels, convert text to audio, and engage in other voice-related interactions.
+Spectra - The All-in-One Discord Companion Bot 🎮✨
+Moderation, Auto-Translation, PvP Tournament Support, Guides, and More!
 
-Core Features
-Voice Channel Greetings: The bot automatically greets users who join a voice channel. It uses Google Text-to-Speech (gTTS) to create a custom greeting message, which is then played in the voice channel.
-Text-to-Speech: The bot can convert text into audio files, allowing for a wide range of voice-based interactions.
-Automated Audio Playback: The bot plays audio messages when users join specific voice channels. It disconnects after playing the audio to avoid redundancy or unnecessary connections.
-Discord Intents: Supports a variety of intents, including member events and voice state events, allowing it to monitor voice channel activity and respond accordingly.
-Technical Implementation
-Discord Library: Built using discord.py, a popular Python library for creating Discord bots.
-Google Text-to-Speech (gTTS): Converts text into speech, used for creating audio files for voice channel greetings.
-FFmpeg Integration: Utilizes FFmpeg for audio processing, required for playing audio in Discord voice channels.
-Asynchronous Handling: Uses asyncio for efficient, non-blocking operations.
+Overview
+Spectra is a fully modular, customizable Discord bot built to streamline and enhance your server's experience. Whether you need it as a welcoming bot, a translator, a gaming guide, or a tournament assistant, Spectra can adapt to your needs. Self-hosted and user-friendly, Spectra requires minimal setup—no coding skills needed! Control every aspect of the bot directly from Discord.
+
+With a growing list of features, Spectra includes and is not limited to:
+
+Moderation: Keep your server safe with commands for kicking, banning, and monitoring chat.
+Auto-Translation: Enable seamless communication across languages in real-time.
+Gaming Support: Comprehensive Dofus Touch guides, from leveling tips to class compatibility.
+Tournament Tools: Effortlessly manage PvP tournaments with customized event settings.
+Voice Chat Greetings: Welcome members to voice channels with personalized messages.
+
+Plugins
+Spectra's modular design lets you load and unload plugins as you need, with support for third-party plugins as well. Examples include:
+
+Voice Commands
+Dofus Touch Data Management
+AI Chat Interaction
+Custom Event Announcements
+Community
+Join a growing community of Spectra users and developers! We're constantly adding new features and plugins, and if you don’t find the one you need, explore our guide on creating your own.
+
+Join us on our Official Discord Server!
+
+License
+Released under the MIT License.
+
+Spectra is named in honor of its multifaceted features that aim to reflect the diverse needs of Discord communities worldwide.
