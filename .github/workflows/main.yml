@@ -5,7 +5,7 @@ on:
     branches:
       - main  # Adjust to your target branch
   schedule:
-    - cron: '0 * * * *'  # Commits changes every hour
+    - cron: '0 */5 * * *'  # Triggers every 5 hours
   workflow_dispatch:
 
 jobs:
