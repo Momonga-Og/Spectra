@@ -3,11 +3,6 @@ from discord.ext import commands
 from discord import app_commands
 import asyncio
 
-# Define intents with MEMBERS intent enabled
-intents = discord.Intents.default()
-intents.members = True  # Enable members intent for on_member_join event
-
-
 class WelcomeSparta(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -105,5 +100,5 @@ class WelcomeView(discord.ui.View):
             print("Role or member data not found.")
 
 async def setup(bot):
-    await bot.add_cog(welcomesparta(bot))
+    await bot.add_cog(WelcomeSparta(bot))
     print("WelcomeSparta cog loaded successfully.")
