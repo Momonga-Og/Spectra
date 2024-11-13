@@ -13,21 +13,22 @@ class YouTubeMP3(commands.Cog):
         await interaction.response.send_message("Processing your request...", ephemeral=True)
 
         try:
-            # Ensure the downloads folder exists
-            if not os.path.exists("downloads"):
-                os.makedirs("downloads")
-
-            # yt-dlp options to extract audio only in MP3 format
             ydl_opts = {
-                'format': 'bestaudio/best',  
+                'format': 'bestaudio/best',  # Best audio quality
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
                 }],
-                'outtmpl': 'downloads/%(id)s.%(ext)s',
-                'noplaylist': True,
-                'cookiefile': 'extra/youtube_cookies.txt',
+                'outtmpl': 'downloads/%(id)s.%(ext)s',  
+                'noplaylist': True,  
+                'username': 'botspectra501',  
+                'password': 'spectraspectra1955',  
+                'extractor_args': {
+                    'youtube': {
+                        'player_skip': ['configs', 'config', 'js'],
+                    }
+                },
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
