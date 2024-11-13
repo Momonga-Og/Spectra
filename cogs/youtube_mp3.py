@@ -19,7 +19,7 @@ class YouTubeMP3(commands.Cog):
 
             # yt-dlp options to extract audio only in MP3 format
             ydl_opts = {
-                'format': 'bestaudio/best',  # Download only the best quality audio
+                'format': 'bestaudio/best',  
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
@@ -27,6 +27,7 @@ class YouTubeMP3(commands.Cog):
                 }],
                 'outtmpl': 'downloads/%(id)s.%(ext)s',
                 'noplaylist': True,
+                'cookiefile': 'extra/youtube_cookies.txt',
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
