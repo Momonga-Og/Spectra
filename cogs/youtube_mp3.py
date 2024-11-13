@@ -13,23 +13,25 @@ class YouTubeMP3(commands.Cog):
         await interaction.response.send_message("Processing your request...", ephemeral=True)
 
         try:
-            ydl_opts = {
-                'format': 'bestaudio/best',  # Best audio quality
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-                'outtmpl': 'downloads/%(id)s.%(ext)s',  
-                'noplaylist': True,  
-                'username': 'botspectra501',  
-                'password': 'spectraspectra1955',  
-                'extractor_args': {
-                    'youtube': {
-                        'player_skip': ['configs', 'config', 'js'],
-                    }
-                },
-            }
+ydl_opts = {
+    'format': 'bestaudio/best',
+    'postprocessors': [{
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'mp3',
+        'preferredquality': '192',
+    }],
+    'outtmpl': 'downloads/%(id)s.%(ext)s',
+    'noplaylist': True,
+    'username': 'oauth',  # Use 'oauth' as the username
+    'password': '',  # Empty password
+    'cookiefile': 'path_to_oauth_token/oauth_token.json',  # Path to the oauth_token.json file
+    'extractor_args': {
+        'youtube': {
+            'player_skip': ['configs', 'config', 'js'],
+        }
+    },
+}
+
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info_dict = ydl.extract_info(url, download=True)
