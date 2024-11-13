@@ -18,7 +18,7 @@ class YouTubeMP3(commands.Cog):
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
-                    'preferredquality': '320',
+                    'preferredquality': '192',
                 }],
                 'outtmpl': 'downloads/%(id)s.%(ext)s',
                 'cookiefile': 'extra/youtube_cookies.txt',
