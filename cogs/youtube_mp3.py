@@ -39,3 +39,5 @@ class YouTubeMP3(commands.Cog):
 
         except Exception as e:
             await interaction.followup.send(f"An error occurred: {e}", ephemeral=True)
+async def setup(bot):
+    await bot.add_cog(YouTubeMP3(bot)) 
