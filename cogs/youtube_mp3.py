@@ -14,16 +14,26 @@ class YouTubeMP3(commands.Cog):
 
         try:
             ydl_opts = {
-                'format': 'bestaudio/best',
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]',
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
                 }],
                 'outtmpl': 'downloads/%(id)s.%(ext)s',
-                'cookiefile': 'extra/youtube_cookies.txt.txt',  # Point to your cookies file
+                'cookiefile': 'extra/youtube_cookies.txt.txt',
                 'sleep_interval_requests': 2,
                 'throttled_rate': '100K',
+                'noplaylist': True,
+                'extractor_args': {
+                    'youtube': {
+                        'player_skip': ['configs', 'config', 'js'],
+                    }
+                },
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                },
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -39,5 +49,6 @@ class YouTubeMP3(commands.Cog):
 
         except Exception as e:
             await interaction.followup.send(f"An error occurred: {e}", ephemeral=True)
+
 async def setup(bot):
     await bot.add_cog(YouTubeMP3(bot)) 
