@@ -108,7 +108,7 @@ async def on_close():
     await close_sessions()
 
 EXTENSIONS = [
-    'cogs.general', 'cogs.moderation', 'cogs.poll', 'cogs.admin', 'cogs.voice',
+    'cogs.general', 'cogs.moderation', 'cogs.poll', 'cogs.admin',
     'cogs.relocate', 'cogs.watermark', 'cogs.serverstats', 'cogs.talk', 'cogs.write',
     'cogs.watermark_user', 'cogs.attack', 'cogs.new_users', 'cogs.role',
     'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.screenshot',
