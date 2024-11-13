@@ -11,11 +11,8 @@ pandas
 openpyxl
 transformers
 aiohttp
-SpeechRecognition
 tensorflow
 tf-keras
 pyaudio
-deep-translator
-langdetect
 googletrans == 4.0.0-rc1
 aioredis
