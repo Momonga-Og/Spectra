@@ -111,7 +111,7 @@ EXTENSIONS = [
     'cogs.general', 'cogs.moderation', 'cogs.poll', 'cogs.admin',
     'cogs.relocate', 'cogs.watermark', 'cogs.serverstats', 'cogs.talk', 'cogs.write',
     'cogs.watermark_user', 'cogs.attack', 'cogs.role',
-    'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.screenshot',
+    'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear',
     'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession',
     'cogs.super', 'cogs.ai', 'cogs.translator',
 ]
