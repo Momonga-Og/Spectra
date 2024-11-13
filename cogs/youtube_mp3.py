@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from pydub import AudioSegment
 import yt_dlp
 import os
 
@@ -21,7 +20,10 @@ class YouTubeMP3(commands.Cog):
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
                 }],
-                'outtmpl': 'downloads/%(id)s.%(ext)s'
+                'outtmpl': 'downloads/%(id)s.%(ext)s',
+                'cookiefile': 'extra/youtube_cookies.txt.txt',  # Point to your cookies file
+                'sleep_interval_requests': 2,
+                'throttled_rate': '100K',
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -37,6 +39,3 @@ class YouTubeMP3(commands.Cog):
 
         except Exception as e:
             await interaction.followup.send(f"An error occurred: {e}", ephemeral=True)
-
-async def setup(bot):
-    await bot.add_cog(YouTubeMP3(bot))
