@@ -110,10 +110,10 @@ async def on_close():
 EXTENSIONS = [
     'cogs.general', 'cogs.moderation', 'cogs.poll', 'cogs.admin',
     'cogs.relocate', 'cogs.watermark', 'cogs.serverstats', 'cogs.talk', 'cogs.write',
-    'cogs.watermark_user', 'cogs.attack', 'cogs.new_users', 'cogs.role',
+    'cogs.watermark_user', 'cogs.attack', 'cogs.role',
     'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.screenshot',
     'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession',
-    'cogs.super', 'cogs.pic', 'cogs.ai', 'cogs.translator', 'cogs.guild'
+    'cogs.super', 'cogs.ai', 'cogs.translator',
 ]
 
 async def load_extensions():
