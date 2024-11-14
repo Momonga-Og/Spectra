@@ -27,11 +27,15 @@ class YouTubeMP3(commands.Cog):
             # Get the response
             res = conn.getresponse()
             data = res.read()
+
+            # Print the raw response for debugging
+            print("Raw API Response:", data.decode("utf-8"))
+
             result = json.loads(data.decode("utf-8"))
 
-            # Check if there was an error
+            # Check if the API returned an error or unexpected result
             if result.get("status") != "ok":
-                await interaction.followup.send("Failed to convert the video to MP3. Please check the URL and try again.", ephemeral=True)
+                await interaction.followup.send(f"Failed to convert the video. Response: {result}", ephemeral=True)
                 return
 
             # Get the download link from the response
