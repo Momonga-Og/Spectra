@@ -1,5 +1,4 @@
-import http.client
-import json
+import requests
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -13,36 +12,29 @@ class YouTubeMP3(commands.Cog):
         await interaction.response.send_message("Processing your request...", ephemeral=True)
 
         try:
-            # Set up connection to RapidAPI
-            conn = http.client.HTTPSConnection("youtube-to-mp323.p.rapidapi.com")
+            # Extract the video ID from the URL
+            video_id = url.split('v=')[-1] if 'v=' in url else url.split('/')[-1]
+            
+            # Prepare the request
+            api_url = "https://youtube-mp36.p.rapidapi.com/dl"
+            querystring = {"id": video_id}
             headers = {
-                'x-rapidapi-key': "5e6976078bmsheb89f5f8d17f7d4p1b5895jsnb31e587ad8cc",
-                'x-rapidapi-host': "youtube-to-mp323.p.rapidapi.com"
+                "x-rapidapi-key": "5e6976078bmsheb89f5f8d17f7d4p1b5895jsnb31e587ad8cc",
+                "x-rapidapi-host": "youtube-mp36.p.rapidapi.com"
             }
 
-            # Encode the YouTube URL
-            request_url = f"/api.php?yt={url.replace('https://', '').replace('http://', '')}"
-            conn.request("GET", request_url, headers=headers)
+            # Send the request to the API
+            response = requests.get(api_url, headers=headers, params=querystring)
 
-            # Get the response
-            res = conn.getresponse()
-            data = res.read()
+            # Check the response from the API
+            response_data = response.json()
 
-            # Print the raw response for debugging
-            print("Raw API Response:", data.decode("utf-8"))
-
-            result = json.loads(data.decode("utf-8"))
-
-            # Check if the API returned an error or unexpected result
-            if result.get("status") != "ok":
-                await interaction.followup.send(f"Failed to convert the video. Response: {result}", ephemeral=True)
+            if response.status_code != 200 or not response_data.get('link'):
+                await interaction.followup.send("Failed to convert the video. Please check the URL and try again.", ephemeral=True)
                 return
 
-            # Get the download link from the response
-            mp3_url = result.get("link")
-            if not mp3_url:
-                await interaction.followup.send("Could not retrieve the MP3 link. Please try again later.", ephemeral=True)
-                return
+            # Get the MP3 download link
+            mp3_url = response_data['link']
 
             # Send the MP3 download link to the user
             await interaction.followup.send(f"Here is your MP3 file: [Download MP3]({mp3_url})", ephemeral=True)
