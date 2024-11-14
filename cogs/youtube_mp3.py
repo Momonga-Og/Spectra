@@ -1,8 +1,8 @@
+import http.client
+import json
 import discord
 from discord.ext import commands
 from discord import app_commands
-import yt_dlp
-import os
 
 class YouTubeMP3(commands.Cog):
     def __init__(self, bot):
@@ -13,35 +13,35 @@ class YouTubeMP3(commands.Cog):
         await interaction.response.send_message("Processing your request...", ephemeral=True)
 
         try:
-            ydl_opts = {
-                'format': 'bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-                'outtmpl': 'downloads/%(id)s.%(ext)s',
-                'noplaylist': True,
-                'username': 'oauth',  # Use 'oauth' as the username
-                'password': '',  # Empty password
-                'cookiefile': 'path_to_oauth_token/oauth_token.json',  # Path to the oauth_token.json file
-                'extractor_args': {
-                    'youtube': {
-                        'player_skip': ['configs', 'config', 'js'],
-                    }
-                },
+            # Set up connection to RapidAPI
+            conn = http.client.HTTPSConnection("youtube-to-mp323.p.rapidapi.com")
+            headers = {
+                'x-rapidapi-key': "5e6976078bmsheb89f5f8d17f7d4p1b5895jsnb31e587ad8cc",
+                'x-rapidapi-host': "youtube-to-mp323.p.rapidapi.com"
             }
 
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info_dict = ydl.extract_info(url, download=True)
-                video_id = info_dict.get("id", None)
-                audio_file = f"downloads/{video_id}.mp3"
+            # Encode the YouTube URL
+            request_url = f"/api.php?yt={url.replace('https://', '').replace('http://', '')}"
+            conn.request("GET", request_url, headers=headers)
 
-            # Send the MP3 file to the user
-            await interaction.followup.send("Here is your MP3 file:", file=discord.File(audio_file))
+            # Get the response
+            res = conn.getresponse()
+            data = res.read()
+            result = json.loads(data.decode("utf-8"))
 
-            # Clean up the MP3 file after sending
-            os.remove(audio_file)
+            # Check if there was an error
+            if result.get("status") != "ok":
+                await interaction.followup.send("Failed to convert the video to MP3. Please check the URL and try again.", ephemeral=True)
+                return
+
+            # Get the download link from the response
+            mp3_url = result.get("link")
+            if not mp3_url:
+                await interaction.followup.send("Could not retrieve the MP3 link. Please try again later.", ephemeral=True)
+                return
+
+            # Send the MP3 download link to the user
+            await interaction.followup.send(f"Here is your MP3 file: [Download MP3]({mp3_url})", ephemeral=True)
 
         except Exception as e:
             await interaction.followup.send(f"An error occurred: {e}", ephemeral=True)
