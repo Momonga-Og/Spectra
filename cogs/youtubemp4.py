@@ -8,10 +8,9 @@ class YouTubeMP4(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # Use @app_commands.command for the slash command
     @app_commands.command(name="youtubemp4", description="Download a YouTube video in MP4 format.")
     async def youtubemp4(self, interaction: discord.Interaction, url: str):
-        await interaction.response.defer()  # Defer response for processing time
+        await interaction.response.defer()  # Defer response to handle processing time
 
         try:
             # Download video
@@ -23,7 +22,13 @@ class YouTubeMP4(commands.Cog):
 
             # Define download path and file name
             file_path = video.download(filename="video.mp4")
-            await interaction.followup.send("Download successful! Uploading...")
+
+            # Check file size limit (Discord's 8 MB limit for non-Nitro users)
+            file_size = os.path.getsize(file_path)
+            if file_size > 8 * 1024 * 1024:  # 8 MB
+                await interaction.followup.send("The video is too large to upload to Discord. Try a shorter video.")
+                os.remove(file_path)  # Clean up
+                return
 
             # Send file to Discord
             await interaction.followup.send(file=discord.File(file_path))
@@ -34,6 +39,5 @@ class YouTubeMP4(commands.Cog):
         except Exception as e:
             await interaction.followup.send(f"An error occurred: {str(e)}")
 
-# Add the Cog to the bot
 async def setup(bot):
     await bot.add_cog(YouTubeMP4(bot))
