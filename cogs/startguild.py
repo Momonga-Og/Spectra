@@ -7,16 +7,40 @@ GUILD_ID = 1300093554064097400  # Replace with your guild ID
 PING_DEF_CHANNEL_ID = 1307429490158342256  # Replace with your ping channel ID
 ALERTE_DEF_CHANNEL_ID = 1300093554399645715  # Replace with your alert channel ID
 
-# Guild emojis with IDs
-GUILD_EMOJIS = {
-    "Darkness": "<:Darkness:1307418763276324944>",
-    "GTO": "<:GTO:1307418692992237668>",
-    "Aversion": "<:aversion:1307418759002198086>",
-    "Bonnebuche": "<:bonnebuche:1307418760763670651>",
-    "LMDF": "<:lmdf:1307418765142786179>",
-    "Notorious": "<:notorious:1307418766266728500>",
-    "Percophile": "<:percophile:1307418769764651228>",
-    "Tilisquad": "<:tilisquad:1307418771882905600>",
+# Guild emojis with IDs and corresponding role IDs
+GUILD_EMOJIS_ROLES = {
+    "Darkness": {
+        "emoji": "<:Darkness:1307418763276324944>",
+        "role_id": 1300093554064097407,
+    },
+    "GTO": {
+        "emoji": "<:GTO:1307418692992237668>",
+        "role_id": 1300093554080612363,
+    },
+    "Aversion": {
+        "emoji": "<:aversion:1307418759002198086>",
+        "role_id": 1300093554064097409,
+    },
+    "Bonnebuche": {
+        "emoji": "<:bonnebuche:1307418760763670651>",
+        "role_id": 1300093554080612365,
+    },
+    "LMDF": {
+        "emoji": "<:lmdf:1307418765142786179>",
+        "role_id": 1300093554080612364,
+    },
+    "Notorious": {
+        "emoji": "<:notorious:1307418766266728500>",
+        "role_id": 1300093554064097406,
+    },
+    "Percophile": {
+        "emoji": "<:percophile:1307418769764651228>",
+        "role_id": 1300093554080612362,
+    },
+    "Tilisquad": {
+        "emoji": "<:tilisquad:1307418771882905600>",
+        "role_id": 1300093554080612367,
+    },
 }
 
 
@@ -24,29 +48,30 @@ class GuildPingView(View):
     def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
         self.bot = bot
-        for guild_name, emoji in GUILD_EMOJIS.items():
-            button = Button(label=guild_name, emoji=emoji, style=discord.ButtonStyle.primary)
-            button.callback = self.create_ping_callback(guild_name)
+        for guild_name, data in GUILD_EMOJIS_ROLES.items():
+            button = Button(label=guild_name, emoji=data["emoji"], style=discord.ButtonStyle.primary)
+            button.callback = self.create_ping_callback(guild_name, data["role_id"])
             self.add_item(button)
 
-    def create_ping_callback(self, guild_name):
+    def create_ping_callback(self, guild_name, role_id):
         async def callback(interaction: discord.Interaction):
             if interaction.guild_id != GUILD_ID:
-                await interaction.response.send_message("This feature is not available in this server.", ephemeral=True)
+                await interaction.response.send_message("Cette fonction n'est pas disponible sur ce serveur.", ephemeral=True)
                 return
 
             alert_channel = interaction.guild.get_channel(ALERTE_DEF_CHANNEL_ID)
             if not alert_channel:
-                await interaction.response.send_message("Alert channel not found!", ephemeral=True)
+                await interaction.response.send_message("Canal d'alerte introuvable !", ephemeral=True)
                 return
 
-            role = discord.utils.get(interaction.guild.roles, name=f"[{guild_name}]")
+            role = interaction.guild.get_role(role_id)
             if not role:
-                await interaction.response.send_message(f"Role for {guild_name} not found!", ephemeral=True)
+                await interaction.response.send_message(f"Rôle pour {guild_name} introuvable !", ephemeral=True)
                 return
 
-            await alert_channel.send(f"{role.mention} Alerte! 🚨")
-            await interaction.response.send_message(f"Alerte sent to {guild_name} in the alert channel!", ephemeral=True)
+            # Send alert to the alert channel
+            await alert_channel.send(f"{role.mention} Connectez-vous au jeu et défendez ! 🚨")
+            await interaction.response.send_message(f"Alerte envoyée à {guild_name} dans le canal d'alerte !", ephemeral=True)
 
         return callback
 
