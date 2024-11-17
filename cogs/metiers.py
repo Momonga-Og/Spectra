@@ -6,7 +6,7 @@ import pandas as pd
 class Metiers(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.file_path = './Professions.xlsx'  # Ensure this file exists and is correctly located
+        self.file_path = './metiers.xlsx'  # Ensure this file exists and is correctly located
         self.professions = pd.ExcelFile(self.file_path).sheet_names
 
     @app_commands.command(name="metiers", description="Afficher les professions disponibles")
