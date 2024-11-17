@@ -70,19 +70,18 @@ class GuildAlertCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(name="setup_panel", help="Set up the guild alert panel in the configured channel.")
-    @commands.has_permissions(administrator=True)
-    async def setup_panel(self, ctx):
+    async def ensure_panel(self):
         """
-        Command to set up or update the panel in the designated channel.
+        Ensures the panel is created and pinned in the ping definition channel.
         """
-        if ctx.guild.id != GUILD_ID:
-            await ctx.send("This command can only be used in the configured server.")
+        guild = self.bot.get_guild(GUILD_ID)
+        if not guild:
+            print("Guild not found. Check the GUILD_ID.")
             return
 
-        channel = ctx.guild.get_channel(PING_DEF_CHANNEL_ID)
+        channel = guild.get_channel(PING_DEF_CHANNEL_ID)
         if not channel:
-            await ctx.send("The configured PING DEF channel does not exist.")
+            print("Ping definition channel not found. Check the PING_DEF_CHANNEL_ID.")
             return
 
         view = GuildPingView(self.bot)
@@ -92,13 +91,21 @@ class GuildAlertCog(commands.Cog):
         async for message in channel.history(limit=50):
             if message.pinned:
                 await message.edit(content=message_content, view=view)
-                await ctx.send("Panel updated.")
+                print("Panel updated.")
                 return
 
         # If no pinned message exists, create a new one
         new_message = await channel.send(content=message_content, view=view)
         await new_message.pin()
-        await ctx.send("Panel created and pinned successfully.")
+        print("Panel created and pinned successfully.")
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        """
+        Listener that ensures the panel is available when the bot is online.
+        """
+        await self.ensure_panel()
+        print("Bot is ready, and the panel is ensured.")
 
 
 async def setup(bot: commands.Bot):
@@ -106,3 +113,37 @@ async def setup(bot: commands.Bot):
     Setup function to load the cog.
     """
     await bot.add_cog(GuildAlertCog(bot))
+
+
+# Main bot entry
+class MyBot(commands.Bot):
+    """
+    Custom bot class with a setup hook for automatic panel creation.
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    async def setup_hook(self):
+        """
+        Hook to ensure the panel is created during bot initialization.
+        """
+        await self.add_cog(GuildAlertCog(self))
+
+
+# Bot Initialization
+intents = discord.Intents.default()
+intents.guilds = True
+intents.messages = True
+intents.message_content = True
+
+bot = MyBot(command_prefix="!", intents=intents)
+
+
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user}")
+
+
+# Run the bot
+TOKEN = "YOUR_BOT_TOKEN"  # Replace with your bot token
+bot.run(TOKEN)
