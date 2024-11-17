@@ -113,7 +113,7 @@ EXTENSIONS = [
     'cogs.watermark_user', 'cogs.attack', 'cogs.role',
     'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear',
     'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession',
-    'cogs.super', 'cogs.ai', 'cogs.translator', 'cogs.spotify', 'cogs.voice', 'cogs.youtubemp4', 'cogs.guild_alert.py',
+    'cogs.super', 'cogs.ai', 'cogs.translator', 'cogs.spotify', 'cogs.voice', 'cogs.youtubemp4', 'cogs.guildalertcog.py',
 ]
 
 async def load_extensions():
