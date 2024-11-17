@@ -3,21 +3,22 @@ from discord.ext import commands
 from discord.ui import Button, View
 
 # Configuration
-GUILD_ID = 1300093554064097400
-PING_DEF_CHANNEL_ID = 1307429490158342256
-ALERTE_DEF_CHANNEL_ID = 1300093554399645715
+GUILD_ID = 1300093554064097400  # Replace with your guild ID
+PING_DEF_CHANNEL_ID = 1307429490158342256  # Replace with your ping channel ID
+ALERTE_DEF_CHANNEL_ID = 1300093554399645715  # Replace with your alert channel ID
 
-# Guild emojis with names (replace with actual emoji IDs)
+# Guild emojis with their IDs
 GUILD_EMOJIS = {
-    "Darkness": "<:Darkness:123456789012345678>",   # Replace with actual emoji ID
-    "GTO": "<:GTO:123456789012345679>",            # Replace with actual emoji ID
-    "Aversion": "<:aversion:123456789012345680>",  # Replace with actual emoji ID
-    "Bonnebuche": "<:bonnebuche:123456789012345681>",
-    "LMDF": "<:lmdf:123456789012345682>",
-    "Notorious": "<:notorious:123456789012345683>",
-    "Percophile": "<:percophile:123456789012345684>",
-    "Tilisquad": "<:tilisquad:123456789012345685>"
+    "Darkness": "<:Darkness:1307418763276324944>",
+    "GTO": "<:GTO:1307418692992237668>",
+    "Aversion": "<:aversion:1307418759002198086>",
+    "Bonnebuche": "<:bonnebuche:1307418760763670651>",
+    "LMDF": "<:lmdf:1307418765142786179>",
+    "Notorious": "<:notorious:1307418766266728500>",
+    "Percophile": "<:percophile:1307418769764651228>",
+    "Tilisquad": "<:tilisquad:1307418771882905600>"
 }
+
 
 class GuildPingView(View):
     """
@@ -41,13 +42,23 @@ class GuildPingView(View):
                 await interaction.response.send_message("This feature is not available in this server.", ephemeral=True)
                 return
 
-            # Get the alert channel and send a message
+            # Get the alert channel
             alert_channel = interaction.guild.get_channel(ALERTE_DEF_CHANNEL_ID)
-            if alert_channel:
-                await alert_channel.send(f"@{guild_name} Alerte! 🚨")
-                await interaction.response.send_message(f"Ping sent to {guild_name} in the alert channel!", ephemeral=True)
-            else:
+            if not alert_channel:
                 await interaction.response.send_message("Alert channel not found!", ephemeral=True)
+                return
+
+            # Get the role corresponding to the guild
+            role = discord.utils.get(interaction.guild.roles, name=f"[{guild_name}]")
+            if not role:
+                await interaction.response.send_message(f"Role for {guild_name} not found!", ephemeral=True)
+                return
+
+            # Send an alert in the alert channel tagging the role
+            await alert_channel.send(f"{role.mention} Alerte! 🚨")
+
+            # Acknowledge the interaction
+            await interaction.response.send_message(f"Alerte sent to {guild_name} in the alert channel!", ephemeral=True)
 
         return callback
 
@@ -78,7 +89,7 @@ class GuildAlertCog(commands.Cog):
         message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
 
         # Check for existing pinned messages and update or create
-        async for message in channel.history(limit=10):
+        async for message in channel.history(limit=50):
             if message.pinned:
                 await message.edit(content=message_content, view=view)
                 await ctx.send("Panel updated.")
@@ -88,6 +99,7 @@ class GuildAlertCog(commands.Cog):
         new_message = await channel.send(content=message_content, view=view)
         await new_message.pin()
         await ctx.send("Panel created and pinned successfully.")
+
 
 async def setup(bot: commands.Bot):
     """
