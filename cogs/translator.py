@@ -28,15 +28,13 @@ class TranslatorCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
-        # Confirm reaction detection
         print("Reaction detected.")
 
-        # Check if the bot should act on this reaction
+        # Ignore bot reactions
         if user.bot:
             print("Ignoring reaction from a bot.")
             return
 
-        # Check permissions for reading message history and sending messages
         channel = reaction.message.channel
         bot_permissions = channel.permissions_for(channel.guild.me)
         if not bot_permissions.read_message_history:
@@ -46,23 +44,19 @@ class TranslatorCog(commands.Cog):
             print("Bot lacks 'send_messages' permission.")
             return
 
-        # Check if the emoji used corresponds to a supported language
         emoji_used = str(reaction.emoji)
         language_code = self.LANGUAGE_MAP.get(emoji_used)
         if not language_code:
             print(f"Unsupported emoji detected: {emoji_used}")
             return
 
-        # Ensure the message contains text
         original_text = reaction.message.content.strip()
         if not original_text:
             print("Message content is empty or non-text. Skipping.")
             return
 
-        # Log the translation attempt
         print(f"Translating message: '{original_text}' to {LANGUAGES.get(language_code, 'unknown language')}.")
 
-        # Translate the text
         try:
             translation = self.translator.translate(original_text, dest=language_code)
             translated_text = translation.text
@@ -70,11 +64,17 @@ class TranslatorCog(commands.Cog):
             target_lang = LANGUAGES.get(language_code, language_code).capitalize()
             print(f"Translation successful: '{original_text}' from {source_lang} to {target_lang} -> '{translated_text}'")
 
-            # Send the translation in the same channel
-            await channel.send(
-                f"{user.mention} requested a translation:\n"
-                f"**From {source_lang} to {target_lang}**:\n{translated_text}"
+            embed = discord.Embed(
+                title="Translation Result",
+                description=f"{user.mention} requested a translation:",
+                color=discord.Color.blue()
             )
+            embed.add_field(name="Original Text", value=f"`{original_text}`", inline=False)
+            embed.add_field(name="Translated Text", value=f"`{translated_text}`", inline=False)
+            embed.add_field(name="Languages", value=f"**From:** {source_lang}\n**To:** {target_lang}", inline=False)
+            embed.set_footer(text="Powered by Google Translate")
+            
+            await channel.send(embed=embed)
 
         except Exception as e:
             print(f"Translation failed: {e}")
@@ -84,26 +84,30 @@ class TranslatorCog(commands.Cog):
     async def translate_message(self, ctx, message_id: int, lang: str):
         """Translate an older message given its ID and target language."""
         try:
-            # Fetch the message by ID
             message = await ctx.channel.fetch_message(message_id)
             original_text = message.content.strip()
-            
+
             if not original_text:
                 await ctx.send("The specified message is empty or non-text.")
                 return
 
-            # Translate the text
             translation = self.translator.translate(original_text, dest=lang)
             translated_text = translation.text
             source_lang = LANGUAGES.get(translation.src, translation.src).capitalize()
             target_lang = LANGUAGES.get(lang, lang).capitalize()
             print(f"Translation successful: '{original_text}' from {source_lang} to {target_lang} -> '{translated_text}'")
 
-            # Send the translation in the channel
-            await ctx.send(
-                f"Translation of message ID {message_id}:\n"
-                f"**From {source_lang} to {target_lang}**:\n{translated_text}"
+            embed = discord.Embed(
+                title="Translation Result",
+                description=f"Translation of message ID {message_id}:",
+                color=discord.Color.green()
             )
+            embed.add_field(name="Original Text", value=f"`{original_text}`", inline=False)
+            embed.add_field(name="Translated Text", value=f"`{translated_text}`", inline=False)
+            embed.add_field(name="Languages", value=f"**From:** {source_lang}\n**To:** {target_lang}", inline=False)
+            embed.set_footer(text="Powered by Google Translate")
+
+            await ctx.send(embed=embed)
 
         except Exception as e:
             print(f"Translation failed: {e}")
