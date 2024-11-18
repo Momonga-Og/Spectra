@@ -67,44 +67,39 @@ class PercoPos(commands.Cog):
                 os.remove(file_path)
 
     def preprocess_image(self, file_path):
+        # Preprocessing to enhance OCR accuracy
         img = Image.open(file_path)
         img = img.convert('L')
         img = img.filter(ImageFilter.MedianFilter())
         enhancer = ImageEnhance.Contrast(img)
         img = enhancer.enhance(2)
 
-        # Additional preprocessing for location extraction
+        # Binarize the image for better text detection
         img_cv = cv2.imread(file_path)  # Convert to OpenCV format
         gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
-        _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-
+        _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         return img, thresh
 
     def extract_location(self, img_thresh):
-        contours, _ = cv2.findContours(img_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        for cnt in contours:
-            x, y, w, h = cv2.boundingRect(cnt)
-            if h > w * 2:  # Filter for location box aspect ratio
-                location_roi = img_thresh[y:y+h, x:x+w]
-                location_text = pytesseract.image_to_string(location_roi, lang='fra')
-                return location_text.strip()
-        return "Not found"
+        x, y, w, h = 50, 50, 300, 100  # Example coordinates for cropping
+        location_roi = img_thresh[y:y+h, x:x+w]
+        location_text = pytesseract.image_to_string(location_roi, lang='fra')
+        return location_text.strip() if location_text.strip() else "Not found"
 
     def extract_guild(self, text):
-        # Improved regular expression with language-specific keywords
-        guild_match = re.search(r"guilde\s*:\s*(.*)", text, re.IGNORECASE)
+        guild_match = re.search(r"(guilde|guild)\s*[:\-\s]*([\w\s]+)", text, re.IGNORECASE)
         if guild_match:
-            return guild_match.group(1).strip()
+            return guild_match.group(2).strip()
         return "Not found"
 
     def extract_alliance(self, text):
-        alliance_match = re.search(r"alliance\s*:\s*(.*)", text, re.IGNORECASE)
+        alliance_match = re.search(r"(alliance|faction)\s*[:\-\s]*([\w\s]+)", text, re.IGNORECASE)
         if alliance_match:
-            return alliance_match.group(1).strip()
+            return alliance_match.group(2).strip()
         return "Not found"
 
     def extract_kamas(self, text):
-        kamas_match = re.search(r"(\d+\s*Kamas)", text, re.IGNORECASE)
+        kamas_match = re.search(r"(\d[\d\s]*Kamas)", text, re.IGNORECASE)
         if kamas_match:
             return kamas_match.group(1).strip()
         return "Not found"
