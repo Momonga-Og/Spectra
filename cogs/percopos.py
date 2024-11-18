@@ -1,4 +1,5 @@
 import discord
+from discord import app_commands
 from discord.ext import commands
 import pytesseract
 from PIL import Image
@@ -9,30 +10,29 @@ class PercoPos(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="percopos")
-    async def percopos(self, ctx):
-        if not ctx.message.attachments:
-            await ctx.send("Please upload an image file with the command!")
-            return
-
-        # Download the uploaded image
-        attachment = ctx.message.attachments[0]
-        file_extension = attachment.filename.split(".")[-1].lower()
+    @app_commands.command(name="percopos", description="Upload an image to extract Perceptor details")
+    @app_commands.describe(image="The image containing the Perceptor details")
+    async def percopos(self, interaction: discord.Interaction, image: discord.Attachment):
+        # Validate file type
+        file_extension = image.filename.split(".")[-1].lower()
         supported_extensions = ["jpg", "jpeg", "jfif", "pjpeg", "pjp", "png"]
         
         if file_extension not in supported_extensions:
-            await ctx.send("Unsupported file format. Please upload a valid image file!")
+            await interaction.response.send_message(
+                "Unsupported file format. Please upload a valid image file!", ephemeral=True
+            )
             return
 
+        # Save the uploaded file
         file_path = f"./temp_image.{file_extension}"
-        await attachment.save(file_path)
+        await image.save(file_path)
 
         try:
             # Perform OCR on the image
-            image = Image.open(file_path)
-            text = pytesseract.image_to_string(image, lang="eng")
+            img = Image.open(file_path)
+            text = pytesseract.image_to_string(img, lang="eng")
             
-            # Extract information
+            # Extract required information
             location = self.extract_location(text)
             guild = self.extract_guild(text)
             alliance = self.extract_alliance(text)
@@ -46,12 +46,12 @@ class PercoPos(commands.Cog):
                 f"**Alliance:** {alliance}\n"
                 f"**Kamas:** {kamas}\n"
             )
-            await ctx.send(response)
+            await interaction.response.send_message(response)
         
         except Exception as e:
-            await ctx.send(f"An error occurred while processing the image: {e}")
+            await interaction.response.send_message(f"An error occurred while processing the image: {e}")
         finally:
-            # Clean up by deleting the image file
+            # Clean up the temporary file
             if os.path.exists(file_path):
                 os.remove(file_path)
 
