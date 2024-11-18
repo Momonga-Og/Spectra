@@ -16,3 +16,5 @@ aioredis
 pytube
 pytesseract
 opencv-python
+fuzzywuzzy
+python-Levenshtein
