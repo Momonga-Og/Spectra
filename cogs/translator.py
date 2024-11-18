@@ -72,8 +72,8 @@ class TranslatorCog(commands.Cog):
             embed.add_field(name="Original Text", value=f"`{original_text}`", inline=False)
             embed.add_field(name="Translated Text", value=f"`{translated_text}`", inline=False)
             embed.add_field(name="Languages", value=f"**From:** {source_lang}\n**To:** {target_lang}", inline=False)
-            embed.set_footer(text="Powered by Google Translate")
-            
+            embed.set_author(name=user.display_name, icon_url=user.avatar.url)
+
             await channel.send(embed=embed)
 
         except Exception as e:
@@ -105,7 +105,7 @@ class TranslatorCog(commands.Cog):
             embed.add_field(name="Original Text", value=f"`{original_text}`", inline=False)
             embed.add_field(name="Translated Text", value=f"`{translated_text}`", inline=False)
             embed.add_field(name="Languages", value=f"**From:** {source_lang}\n**To:** {target_lang}", inline=False)
-            embed.set_footer(text="Powered by Google Translate")
+            embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
 
             await ctx.send(embed=embed)
 
