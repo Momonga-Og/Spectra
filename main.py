@@ -110,7 +110,7 @@ async def on_close():
 EXTENSIONS = [
     'cogs.general', 'cogs.moderation', 'cogs.poll', 'cogs.admin',
     'cogs.relocate', 'cogs.watermark', 'cogs.serverstats', 'cogs.talk', 'cogs.write',
-    'cogs.watermark_user', 'cogs.attack', 'cogs.role', 'cogs.metiers',
+    'cogs.watermark_user', 'cogs.attack', 'cogs.role', 'cogs.metiers', 'cogs.percopos',
     'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.startguild',  # Corrected here
     'cogs.rbg', 'cogs.bow', 'cogs.welcomesparta', 'cogs.contract', 'cogs.profession',
     'cogs.super', 'cogs.ai', 'cogs.translator', 'cogs.spotify', 'cogs.voice', 'cogs.youtubemp4',
