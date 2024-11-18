@@ -26,10 +26,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y portaudio19-dev
 
-      - name: Install Tesseract OCR
+      - name: Install Tesseract OCR with French language
         run: |
           sudo apt-get update
-          sudo apt-get install -y tesseract-ocr
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-fra
+
+      - name: Set up Tesseract environment variable
+        run: |
+          export TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/
 
       - name: Set up Python
         uses: actions/setup-python@v4
