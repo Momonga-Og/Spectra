@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord.ui import View, Button
+import random
 
 # Configuration
 GUILD_ID = 1300093554064097400  # Replace with your guild ID
@@ -43,20 +44,35 @@ GUILD_EMOJIS_ROLES = {
     },
 }
 
+# Alert messages pool
+ALERT_MESSAGES = [
+    "🚨 {role} Alerte DEF ! Connectez-vous maintenant !",
+    "⚔️ {role}, il est temps de défendre !",
+    "🛡️ {role} Défendez votre guilde !",
+    "💥 {role} est attaquée ! Rejoignez la défense !",
+    "⚠️ {role}, mobilisez votre équipe pour défendre !",
+]
+
 
 class GuildPingView(View):
     def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
         self.bot = bot
         for guild_name, data in GUILD_EMOJIS_ROLES.items():
-            button = Button(label=guild_name, emoji=data["emoji"], style=discord.ButtonStyle.primary)
+            button = Button(
+                label=guild_name,
+                emoji=data["emoji"],
+                style=discord.ButtonStyle.primary
+            )
             button.callback = self.create_ping_callback(guild_name, data["role_id"])
             self.add_item(button)
 
     def create_ping_callback(self, guild_name, role_id):
         async def callback(interaction: discord.Interaction):
             if interaction.guild_id != GUILD_ID:
-                await interaction.response.send_message("Cette fonction n'est pas disponible sur ce serveur.", ephemeral=True)
+                await interaction.response.send_message(
+                    "Cette fonction n'est pas disponible sur ce serveur.", ephemeral=True
+                )
                 return
 
             alert_channel = interaction.guild.get_channel(ALERTE_DEF_CHANNEL_ID)
@@ -69,9 +85,22 @@ class GuildPingView(View):
                 await interaction.response.send_message(f"Rôle pour {guild_name} introuvable !", ephemeral=True)
                 return
 
+            # Choose a random alert message
+            alert_message = random.choice(ALERT_MESSAGES).format(role=role.mention)
+
             # Send alert to the alert channel
-            await alert_channel.send(f"{role.mention} Connectez-vous au jeu et défendez ! 🚨")
-            await interaction.response.send_message(f"Alerte envoyée à {guild_name} dans le canal d'alerte !", ephemeral=True)
+            user_avatar = interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url
+            await alert_channel.send(
+                f"{alert_message}\n**Clicked by:** {interaction.user.mention} ({interaction.user})",
+                embed=discord.Embed(
+                    description=f"{interaction.user.mention} clicked.",
+                    thumbnail=user_avatar
+                ),
+            )
+
+            await interaction.response.send_message(
+                f"Alerte envoyée à {guild_name} dans le canal d'alerte!", ephemeral=True
+            )
 
         return callback
 
@@ -92,7 +121,7 @@ class StartGuildCog(commands.Cog):
             return
 
         view = GuildPingView(self.bot)
-        message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
+        message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF!"
 
         async for message in channel.history(limit=50):
             if message.pinned:
@@ -107,6 +136,18 @@ class StartGuildCog(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         await self.ensure_panel()
+
+        # Lock the alert channel to only allow bot messages
+        guild = self.bot.get_guild(GUILD_ID)
+        alert_channel = guild.get_channel(ALERTE_DEF_CHANNEL_ID)
+        if alert_channel:
+            await alert_channel.set_permissions(
+                guild.default_role,
+                send_messages=False,
+                add_reactions=False
+            )
+            print("Alert channel locked successfully.")
+
         print("Bot is ready, and the panel is ensured.")
 
 
