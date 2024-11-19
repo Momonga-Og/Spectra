@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord.ui import View, Button
+from discord.ui import View, Button, Modal, TextInput
 import random
 
 # Configuration
@@ -54,13 +54,49 @@ ALERT_MESSAGES = [
 ]
 
 
+class AlertModal(Modal):
+    def __init__(self, guild_name, role, alert_channel):
+        super().__init__(title=f"Alerte DEF pour {guild_name}")
+
+        self.guild_name = guild_name
+        self.role = role
+        self.alert_channel = alert_channel
+
+        self.message_input = TextInput(
+            label="Informations supplémentaires",
+            placeholder="Exemple : Nom de la guilde attaquante, heure, etc.",
+            max_length=100,
+            style=discord.TextStyle.paragraph,
+        )
+        self.add_item(self.message_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        # Create the alert message
+        alert_message = random.choice(ALERT_MESSAGES).format(role=self.role.mention)
+        additional_info = self.message_input.value.strip()
+
+        if additional_info:
+            alert_message += f"\n📝 **Infos supplémentaires** : {additional_info}"
+
+        # Send alert to the alert channel
+        embed = discord.Embed(
+            title="🔔 Alerte envoyée !",
+            description=f"**{interaction.user.mention}** a déclenché une alerte pour **{self.guild_name}**.",
+            color=discord.Color.red()
+        )
+        embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
+
+        await self.alert_channel.send(f"{alert_message}", embed=embed)
+        await interaction.response.send_message("Alerte envoyée avec succès !", ephemeral=True)
+
+
 class GuildPingView(View):
     def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
         self.bot = bot
         for guild_name, data in GUILD_EMOJIS_ROLES.items():
             button = Button(
-                label=f"  {guild_name.upper()}  ",  # Make labels bold and fancier
+                label=f"  {guild_name.upper()}  ",
                 emoji=data["emoji"],
                 style=discord.ButtonStyle.primary
             )
@@ -85,25 +121,9 @@ class GuildPingView(View):
                 await interaction.response.send_message(f"Rôle pour {guild_name} introuvable !", ephemeral=True)
                 return
 
-            # Choose a random alert message
-            alert_message = random.choice(ALERT_MESSAGES).format(role=role.mention)
-
-            # Send alert to the alert channel
-            user_avatar = interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url
-            embed = discord.Embed(
-                title="🔔 Alerte envoyée !",
-                description=f"**{interaction.user.mention}** a déclenché une alerte pour **{guild_name}**.",
-                color=discord.Color.red()
-            )
-            embed.set_thumbnail(url=user_avatar)  # Thumbnail (avatar, default size by Discord)
-
-            # Send message to the alert channel
-            await alert_channel.send(f"{alert_message}", embed=embed)
-
-            # Acknowledge the interaction
-            await interaction.response.send_message(
-                f"Alerte envoyée à {guild_name} dans le canal d'alerte!", ephemeral=True
-            )
+            # Show the modal to the user
+            modal = AlertModal(guild_name, role, alert_channel)
+            await interaction.response.send_modal(modal)
 
         return callback
 
@@ -140,7 +160,6 @@ class StartGuildCog(commands.Cog):
     async def on_ready(self):
         await self.ensure_panel()
 
-        # Lock the alert channel to only allow bot messages
         guild = self.bot.get_guild(GUILD_ID)
         alert_channel = guild.get_channel(ALERTE_DEF_CHANNEL_ID)
         if alert_channel:
