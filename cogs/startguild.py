@@ -59,8 +59,9 @@ class GuildPingView(View):
         super().__init__(timeout=None)
         self.bot = bot
         for guild_name, data in GUILD_EMOJIS_ROLES.items():
+            # Fancier and larger button labels
             button = Button(
-                label=guild_name,
+                label=f"  {guild_name.upper()}  ",  # Add padding and uppercase
                 emoji=data["emoji"],
                 style=discord.ButtonStyle.primary
             )
@@ -89,13 +90,16 @@ class GuildPingView(View):
             alert_message = random.choice(ALERT_MESSAGES).format(role=role.mention)
 
             # Send alert to the alert channel
-            user_avatar = interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url
+            user_avatar = (
+                interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url
+            )
             embed = discord.Embed(
                 title="🔔 Alerte envoyée !",
                 description=f"**{interaction.user.mention}** a déclenché une alerte pour **{guild_name}**.",
                 color=discord.Color.red()
             )
             embed.set_thumbnail(url=user_avatar)
+            embed.set_thumbnail(width=40, height=40)  # Smaller avatar
             await alert_channel.send(f"{alert_message}", embed=embed)
 
             await interaction.response.send_message(
@@ -121,7 +125,7 @@ class StartGuildCog(commands.Cog):
             return
 
         view = GuildPingView(self.bot)
-        message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
+        message_content = "**Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !**"
 
         async for message in channel.history(limit=50):
             if message.pinned:
