@@ -54,40 +54,56 @@ ALERT_MESSAGES = [
 ]
 
 
-class AlertModal(Modal):
-    def __init__(self, guild_name, role, alert_channel):
-        super().__init__(title=f"Alerte DEF pour {guild_name}")
+class NoteModal(Modal):
+    def __init__(self, message: discord.Message):
+        super().__init__(title="Ajouter une note")
+        self.message = message
 
-        self.guild_name = guild_name
-        self.role = role
-        self.alert_channel = alert_channel
-
-        self.message_input = TextInput(
-            label="Informations supplémentaires",
-            placeholder="Exemple : Nom de la guilde attaquante, heure, etc.",
+        self.note_input = TextInput(
+            label="Votre note",
+            placeholder="Ajoutez des détails sur l'alerte (nom de la guilde attaquante, heure, etc.)",
             max_length=100,
             style=discord.TextStyle.paragraph,
         )
-        self.add_item(self.message_input)
+        self.add_item(self.note_input)
 
     async def on_submit(self, interaction: discord.Interaction):
-        # Create the alert message
-        alert_message = random.choice(ALERT_MESSAGES).format(role=self.role.mention)
-        additional_info = self.message_input.value.strip()
-
-        if additional_info:
-            alert_message += f"\n📝 **Infos supplémentaires** : {additional_info}"
-
-        # Send alert to the alert channel
-        embed = discord.Embed(
-            title="🔔 Alerte envoyée !",
-            description=f"**{interaction.user.mention}** a déclenché une alerte pour **{self.guild_name}**.",
-            color=discord.Color.red()
+        # Retrieve the original embed and append the note
+        embed = self.message.embeds[0]
+        existing_notes = embed.fields[0].value if embed.fields else "Aucune note."
+        updated_notes = (
+            f"{existing_notes}\n- **{interaction.user.display_name}**: {self.note_input.value.strip()}"
         )
-        embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
 
-        await self.alert_channel.send(f"{alert_message}", embed=embed)
-        await interaction.response.send_message("Alerte envoyée avec succès !", ephemeral=True)
+        # Update the embed with the new note
+        embed.clear_fields()
+        embed.add_field(name="📝 Notes", value=updated_notes, inline=False)
+
+        await self.message.edit(embed=embed)
+        await interaction.response.send_message("Votre note a été ajoutée avec succès !", ephemeral=True)
+
+
+class AddNoteView(View):
+    def __init__(self, bot: commands.Bot):
+        super().__init__()
+        self.bot = bot
+
+        self.add_note_button = Button(
+            label="Ajouter une note",
+            style=discord.ButtonStyle.secondary,
+            emoji="📝"
+        )
+        self.add_note_button.callback = self.add_note_callback
+        self.add_item(self.add_note_button)
+
+    async def add_note_callback(self, interaction: discord.Interaction):
+        # Check if the user can interact with this
+        if interaction.channel_id != ALERTE_DEF_CHANNEL_ID:
+            await interaction.response.send_message("Vous ne pouvez pas ajouter de note ici.", ephemeral=True)
+            return
+
+        modal = NoteModal(interaction.message)
+        await interaction.response.send_modal(modal)
 
 
 class GuildPingView(View):
@@ -121,9 +137,22 @@ class GuildPingView(View):
                 await interaction.response.send_message(f"Rôle pour {guild_name} introuvable !", ephemeral=True)
                 return
 
-            # Show the modal to the user
-            modal = AlertModal(guild_name, role, alert_channel)
-            await interaction.response.send_modal(modal)
+            # Send alert to the alert channel
+            alert_message = random.choice(ALERT_MESSAGES).format(role=role.mention)
+            embed = discord.Embed(
+                title="🔔 Alerte envoyée !",
+                description=f"**{interaction.user.mention}** a déclenché une alerte pour **{guild_name}**.",
+                color=discord.Color.red()
+            )
+            embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
+            embed.add_field(name="📝 Notes", value="Aucune note.", inline=False)
+
+            sent_message = await alert_channel.send(f"{alert_message}", embed=embed, view=AddNoteView(self.bot))
+
+            # Acknowledge the interaction
+            await interaction.response.send_message(
+                f"Alerte envoyée à {guild_name} dans le canal d'alerte!", ephemeral=True
+            )
 
         return callback
 
