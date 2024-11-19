@@ -44,7 +44,7 @@ GUILD_EMOJIS_ROLES = {
     },
 }
 
-# Alert messages pool
+# French alert messages
 ALERT_MESSAGES = [
     "🚨 {role} Alerte DEF ! Connectez-vous maintenant !",
     "⚔️ {role}, il est temps de défendre !",
@@ -90,13 +90,13 @@ class GuildPingView(View):
 
             # Send alert to the alert channel
             user_avatar = interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url
-            await alert_channel.send(
-                f"{alert_message}\n**Clicked by:** {interaction.user.mention} ({interaction.user})",
-                embed=discord.Embed(
-                    description=f"{interaction.user.mention} clicked.",
-                    thumbnail=user_avatar
-                ),
+            embed = discord.Embed(
+                title="🔔 Alerte envoyée !",
+                description=f"**{interaction.user.mention}** a déclenché une alerte pour **{guild_name}**.",
+                color=discord.Color.red()
             )
+            embed.set_thumbnail(url=user_avatar)
+            await alert_channel.send(f"{alert_message}", embed=embed)
 
             await interaction.response.send_message(
                 f"Alerte envoyée à {guild_name} dans le canal d'alerte!", ephemeral=True
@@ -121,7 +121,7 @@ class StartGuildCog(commands.Cog):
             return
 
         view = GuildPingView(self.bot)
-        message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF!"
+        message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
 
         async for message in channel.history(limit=50):
             if message.pinned:
