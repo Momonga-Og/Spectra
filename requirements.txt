@@ -18,3 +18,4 @@ pytesseract
 opencv-python
 fuzzywuzzy
 python-Levenshtein
+onnxruntime
