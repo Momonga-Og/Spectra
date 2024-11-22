@@ -7,43 +7,17 @@ import random
 GUILD_ID = 1300093554064097400  # Replace with your guild ID
 PING_DEF_CHANNEL_ID = 1307429490158342256  # Replace with your ping channel ID
 ALERTE_DEF_CHANNEL_ID = 1300093554399645715  # Replace with your alert channel ID
-LATIF_CHANNEL_ID = 1309458302153003039  # Channel for the "Latif" button alert
-LATIF_USER_ID = 486652069831376943  # User to be tagged for "Latif" button
 
 # Guild emojis with IDs and corresponding role IDs
 GUILD_EMOJIS_ROLES = {
-    "Darkness": {
-        "emoji": "<:Darkness:1307418763276324944>",
-        "role_id": 1300093554064097407,
-    },
-    "GTO": {
-        "emoji": "<:GTO:1307418692992237668>",
-        "role_id": 1300093554080612363,
-    },
-    "Aversion": {
-        "emoji": "<:aversion:1307418759002198086>",
-        "role_id": 1300093554064097409,
-    },
-    "Bonnebuche": {
-        "emoji": "<:bonnebuche:1307418760763670651>",
-        "role_id": 1300093554080612365,
-    },
-    "LMDF": {
-        "emoji": "<:lmdf:1307418765142786179>",
-        "role_id": 1300093554080612364,
-    },
-    "Notorious": {
-        "emoji": "<:notorious:1307418766266728500>",
-        "role_id": 1300093554064097406,
-    },
-    "Percophile": {
-        "emoji": "<:percophile:1307418769764651228>",
-        "role_id": 1300093554080612362,
-    },
-    "Tilisquad": {
-        "emoji": "<:tilisquad:1307418771882905600>",
-        "role_id": 1300093554080612367,
-    },
+    "Darkness": {"emoji": "<:Darkness:1307418763276324944>", "role_id": 1300093554064097407},
+    "GTO": {"emoji": "<:GTO:1307418692992237668>", "role_id": 1300093554080612363},
+    "Aversion": {"emoji": "<:aversion:1307418759002198086>", "role_id": 1300093554064097409},
+    "Bonnebuche": {"emoji": "<:bonnebuche:1307418760763670651>", "role_id": 1300093554080612365},
+    "LMDF": {"emoji": "<:lmdf:1307418765142786179>", "role_id": 1300093554080612364},
+    "Notorious": {"emoji": "<:notorious:1307418766266728500>", "role_id": 1300093554064097406},
+    "Percophile": {"emoji": "<:percophile:1307418769764651228>", "role_id": 1300093554080612362},
+    "Tilisquad": {"emoji": "<:tilisquad:1307418771882905600>", "role_id": 1300093554080612367},
 }
 
 # French alert messages
@@ -70,12 +44,15 @@ class NoteModal(Modal):
         self.add_item(self.note_input)
 
     async def on_submit(self, interaction: discord.Interaction):
-        embed = self.message.embeds[0]
-        existing_notes = embed.fields[0].value if embed.fields else "Aucune note."
-        updated_notes = (
-            f"{existing_notes}\n- **{interaction.user.display_name}**: {self.note_input.value.strip()}"
-        )
+        # Retrieve the original embed and append the note
+        embed = self.message.embeds[0] if self.message.embeds else None
+        if not embed:
+            await interaction.response.send_message("Impossible de récupérer l'embed à modifier.", ephemeral=True)
+            return
 
+        # Add the new note to the existing embed
+        existing_notes = embed.fields[0].value if embed.fields else "Aucune note."
+        updated_notes = f"{existing_notes}\n- **{interaction.user.display_name}**: {self.note_input.value.strip()}"
         embed.clear_fields()
         embed.add_field(name="📝 Notes", value=updated_notes, inline=False)
 
@@ -97,19 +74,25 @@ class AddNoteView(View):
         self.add_item(self.add_note_button)
 
     async def add_note_callback(self, interaction: discord.Interaction):
-        if interaction.channel_id != ALERTE_DEF_CHANNEL_ID:
-            await interaction.response.send_message("Vous ne pouvez pas ajouter de note ici.", ephemeral=True)
-            return
+        try:
+            # Ensure interaction is happening in the correct channel
+            if interaction.channel_id != ALERTE_DEF_CHANNEL_ID:
+                await interaction.response.send_message("Vous ne pouvez pas ajouter de note ici.", ephemeral=True)
+                return
 
-        modal = NoteModal(interaction.message)
-        await interaction.response.send_modal(modal)
+            # Show the modal to the user
+            modal = NoteModal(interaction.message)
+            await interaction.response.send_modal(modal)
+
+        except Exception as e:
+            print(f"Error in add_note_callback: {e}")
+            await interaction.response.send_message("Une erreur est survenue.", ephemeral=True)
 
 
 class GuildPingView(View):
     def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
         self.bot = bot
-
         for guild_name, data in GUILD_EMOJIS_ROLES.items():
             button = Button(
                 label=f"  {guild_name.upper()}  ",
@@ -119,59 +102,50 @@ class GuildPingView(View):
             button.callback = self.create_ping_callback(guild_name, data["role_id"])
             self.add_item(button)
 
-        # Add the "Latif" button
-        self.latif_button = Button(
-            label="Latif",
-            emoji="<:Latif:1273741410633384034>",
-            style=discord.ButtonStyle.danger
-        )
-        self.latif_button.callback = self.latif_callback
-        self.add_item(self.latif_button)
-
     def create_ping_callback(self, guild_name, role_id):
         async def callback(interaction: discord.Interaction):
-            if interaction.guild_id != GUILD_ID:
-                await interaction.response.send_message(
-                    "Cette fonction n'est pas disponible sur ce serveur.", ephemeral=True
+            try:
+                # Ensure interaction is happening in the correct guild
+                if interaction.guild_id != GUILD_ID:
+                    await interaction.response.send_message(
+                        "Cette fonction n'est pas disponible sur ce serveur.", ephemeral=True
+                    )
+                    return
+
+                # Fetch the alert channel
+                alert_channel = interaction.guild.get_channel(ALERTE_DEF_CHANNEL_ID)
+                if not alert_channel:
+                    await interaction.response.send_message("Canal d'alerte introuvable !", ephemeral=True)
+                    return
+
+                # Fetch the role
+                role = interaction.guild.get_role(role_id)
+                if not role:
+                    await interaction.response.send_message(f"Rôle pour {guild_name} introuvable !", ephemeral=True)
+                    return
+
+                # Send alert to the alert channel
+                alert_message = random.choice(ALERT_MESSAGES).format(role=role.mention)
+                embed = discord.Embed(
+                    title="🔔 Alerte envoyée !",
+                    description=f"**{interaction.user.mention}** a déclenché une alerte pour **{guild_name}**.",
+                    color=discord.Color.red()
                 )
-                return
+                embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
+                embed.add_field(name="📝 Notes", value="Aucune note.", inline=False)
 
-            alert_channel = interaction.guild.get_channel(ALERTE_DEF_CHANNEL_ID)
-            if not alert_channel:
-                await interaction.response.send_message("Canal d'alerte introuvable !", ephemeral=True)
-                return
+                sent_message = await alert_channel.send(f"{alert_message}", embed=embed, view=AddNoteView(self.bot))
 
-            role = interaction.guild.get_role(role_id)
-            if not role:
-                await interaction.response.send_message(f"Rôle pour {guild_name} introuvable !", ephemeral=True)
-                return
+                # Acknowledge the interaction
+                await interaction.response.send_message(
+                    f"Alerte envoyée à {guild_name} dans le canal d'alerte!", ephemeral=True
+                )
 
-            alert_message = random.choice(ALERT_MESSAGES).format(role=role.mention)
-            embed = discord.Embed(
-                title="🔔 Alerte envoyée !",
-                description=f"**{interaction.user.mention}** a déclenché une alerte pour **{guild_name}**.",
-                color=discord.Color.red()
-            )
-            embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
-            embed.add_field(name="📝 Notes", value="Aucune note.", inline=False)
-
-            sent_message = await alert_channel.send(f"{alert_message}", embed=embed, view=AddNoteView(self.bot))
-            await interaction.response.send_message(
-                f"Alerte envoyée à {guild_name} dans le canal d'alerte!", ephemeral=True
-            )
+            except Exception as e:
+                print(f"Error in ping callback for {guild_name}: {e}")
+                await interaction.response.send_message("Une erreur est survenue.", ephemeral=True)
 
         return callback
-
-    async def latif_callback(self, interaction: discord.Interaction):
-        channel = interaction.guild.get_channel(LATIF_CHANNEL_ID)
-        user = interaction.guild.get_member(LATIF_USER_ID)
-
-        if not channel or not user:
-            await interaction.response.send_message("Erreur : Canal ou utilisateur introuvable.", ephemeral=True)
-            return
-
-        await channel.send(f"🚨 **Alerte Latif !**\n{user.mention}, vous avez été appelé par {interaction.user.mention}.")
-        await interaction.response.send_message("Alerte Latif envoyée !", ephemeral=True)
 
 
 class StartGuildCog(commands.Cog):
@@ -190,7 +164,7 @@ class StartGuildCog(commands.Cog):
             return
 
         view = GuildPingView(self.bot)
-        message_content = "Cliquez sur le logo de votre guilde ou Latif pour envoyer une alerte !"
+        message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
 
         async for message in channel.history(limit=50):
             if message.pinned:
