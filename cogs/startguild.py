@@ -44,26 +44,26 @@ class NoteModal(Modal):
         self.add_item(self.note_input)
 
     async def on_submit(self, interaction: discord.Interaction):
-        # Retrieve the original embed and append the note
         embed = self.message.embeds[0] if self.message.embeds else None
         if not embed:
             await interaction.response.send_message("Impossible de récupérer l'embed à modifier.", ephemeral=True)
             return
 
-        # Add the new note to the existing embed
         existing_notes = embed.fields[0].value if embed.fields else "Aucune note."
         updated_notes = f"{existing_notes}\n- **{interaction.user.display_name}**: {self.note_input.value.strip()}"
         embed.clear_fields()
         embed.add_field(name="📝 Notes", value=updated_notes, inline=False)
 
         await self.message.edit(embed=embed)
-        await interaction.response.send_message("Votre note a été ajoutée avec succès !", ephemeral=True)
+        await interaction.response.send_message("Votre note a été ajoutée avec succès !", ephemeral=True)
 
 
-class AddNoteView(View):
-    def __init__(self, bot: commands.Bot):
-        super().__init__()
+class AlertActionView(View):
+    def __init__(self, bot: commands.Bot, message: discord.Message):
+        super().__init__(timeout=None)
         self.bot = bot
+        self.message = message
+        self.is_locked = False
 
         self.add_note_button = Button(
             label="Ajouter une note",
@@ -73,20 +73,50 @@ class AddNoteView(View):
         self.add_note_button.callback = self.add_note_callback
         self.add_item(self.add_note_button)
 
+        self.won_button = Button(
+            label="Won",
+            style=discord.ButtonStyle.success,
+        )
+        self.won_button.callback = self.mark_as_won
+        self.add_item(self.won_button)
+
+        self.lost_button = Button(
+            label="Lost",
+            style=discord.ButtonStyle.danger,
+        )
+        self.lost_button.callback = self.mark_as_lost
+        self.add_item(self.lost_button)
+
     async def add_note_callback(self, interaction: discord.Interaction):
-        try:
-            # Ensure interaction is happening in the correct channel
-            if interaction.channel_id != ALERTE_DEF_CHANNEL_ID:
-                await interaction.response.send_message("Vous ne pouvez pas ajouter de note ici.", ephemeral=True)
-                return
+        if interaction.channel_id != ALERTE_DEF_CHANNEL_ID:
+            await interaction.response.send_message("Vous ne pouvez pas ajouter de note ici.", ephemeral=True)
+            return
 
-            # Show the modal to the user
-            modal = NoteModal(interaction.message)
-            await interaction.response.send_modal(modal)
+        modal = NoteModal(self.message)
+        await interaction.response.send_modal(modal)
 
-        except Exception as e:
-            print(f"Error in add_note_callback: {e}")
-            await interaction.response.send_message("Une erreur est survenue.", ephemeral=True)
+    async def mark_as_won(self, interaction: discord.Interaction):
+        await self.mark_alert(interaction, "Gagnée", discord.Color.green())
+
+    async def mark_as_lost(self, interaction: discord.Interaction):
+        await self.mark_alert(interaction, "Perdue", discord.Color.red())
+
+    async def mark_alert(self, interaction: discord.Interaction, status: str, color: discord.Color):
+        if self.is_locked:
+            await interaction.response.send_message("Cette alerte a déjà été marquée.", ephemeral=True)
+            return
+
+        self.is_locked = True
+        for item in self.children:
+            item.disabled = True
+        await self.message.edit(view=self)
+
+        embed = self.message.embeds[0]
+        embed.color = color
+        embed.add_field(name="Statut", value=f"L'alerte a été marquée comme **{status}** par {interaction.user.mention}.", inline=False)
+
+        await self.message.edit(embed=embed)
+        await interaction.response.send_message(f"Alerte marquée comme **{status}** avec succès.", ephemeral=True)
 
 
 class GuildPingView(View):
@@ -105,26 +135,22 @@ class GuildPingView(View):
     def create_ping_callback(self, guild_name, role_id):
         async def callback(interaction: discord.Interaction):
             try:
-                # Ensure interaction is happening in the correct guild
                 if interaction.guild_id != GUILD_ID:
                     await interaction.response.send_message(
                         "Cette fonction n'est pas disponible sur ce serveur.", ephemeral=True
                     )
                     return
 
-                # Fetch the alert channel
                 alert_channel = interaction.guild.get_channel(ALERTE_DEF_CHANNEL_ID)
                 if not alert_channel:
-                    await interaction.response.send_message("Canal d'alerte introuvable !", ephemeral=True)
+                    await interaction.response.send_message("Canal d'alerte introuvable !", ephemeral=True)
                     return
 
-                # Fetch the role
                 role = interaction.guild.get_role(role_id)
                 if not role:
-                    await interaction.response.send_message(f"Rôle pour {guild_name} introuvable !", ephemeral=True)
+                    await interaction.response.send_message(f"Rôle pour {guild_name} introuvable !", ephemeral=True)
                     return
 
-                # Send alert to the alert channel
                 alert_message = random.choice(ALERT_MESSAGES).format(role=role.mention)
                 embed = discord.Embed(
                     title="🔔 Alerte envoyée !",
@@ -134,11 +160,12 @@ class GuildPingView(View):
                 embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
                 embed.add_field(name="📝 Notes", value="Aucune note.", inline=False)
 
-                sent_message = await alert_channel.send(f"{alert_message}", embed=embed, view=AddNoteView(self.bot))
+                sent_message = await alert_channel.send(content=alert_message, embed=embed)
+                view = AlertActionView(self.bot, sent_message)
+                await sent_message.edit(view=view)
 
-                # Acknowledge the interaction
                 await interaction.response.send_message(
-                    f"Alerte envoyée à {guild_name} dans le canal d'alerte!", ephemeral=True
+                    f"Alerte envoyée à {guild_name} dans le canal d'alerte !", ephemeral=True
                 )
 
             except Exception as e:
@@ -164,7 +191,18 @@ class StartGuildCog(commands.Cog):
             return
 
         view = GuildPingView(self.bot)
-        message_content = "Cliquez sur le logo de votre guilde pour envoyer une alerte DEF !"
+        message_content = (
+    "**🎯 Panneau d'Alerte DEF**\n\n"
+    "Bienvenue sur le Panneau d'Alerte Défense ! Cliquez sur le bouton de votre guilde ci-dessous pour envoyer une alerte à votre équipe. "
+    "Chaque bouton correspond à une guilde, et le fait d'appuyer dessus notifiera tous les membres associés à cette guilde.\n\n"
+    "💡 **Comment l'utiliser :**\n"
+    "1️⃣ Cliquez sur le bouton de votre guilde.\n"
+    "2️⃣ Vérifiez le canal d'alerte pour les mises à jour.\n"
+    "3️⃣ Ajoutez des notes aux alertes si nécessaire.\n\n"
+    "━━━━━━━━━━━━━━━━━━━━\n"
+    "⬇️ **Guildes Disponibles** ⬇️\n"
+)
+
 
         async for message in channel.history(limit=50):
             if message.pinned:
@@ -184,13 +222,11 @@ class StartGuildCog(commands.Cog):
         alert_channel = guild.get_channel(ALERTE_DEF_CHANNEL_ID)
         if alert_channel:
             await alert_channel.set_permissions(
-                guild.default_role,
-                send_messages=False,
-                add_reactions=False
+                guild.default_role, send_messages=False, add_reactions=False
             )
-            print("Alert channel locked successfully.")
+            print("Alert channel permissions updated.")
 
-        print("Bot is ready, and the panel is ensured.")
+        print("Bot is ready.")
 
 
 async def setup(bot: commands.Bot):
