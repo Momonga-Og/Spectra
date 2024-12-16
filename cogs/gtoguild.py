@@ -168,7 +168,7 @@ class GuildPingView(View):
         return callback
 
 
-class StartGuildCog(commands.Cog):
+class SecondServerCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -185,15 +185,14 @@ class StartGuildCog(commands.Cog):
 
         view = GuildPingView(self.bot)
         message_content = (
-    "**🎯 Panneau d'Alerte DEF**\n\n"
-    "Bienvenue sur le Panneau d'Alerte Défense ! Cliquez sur le bouton de votre guilde ci-dessous pour envoyer une alerte à votre équipe. "
-    "💡 **Comment l'utiliser :**\n"
-    "1️⃣ Cliquez sur le bouton de votre guilde.\n"
-    "2️⃣ Vérifiez le canal d'alerte pour les mises à jour.\n"
-    "3️⃣ Ajoutez des notes aux alertes si nécessaire.\n\n"
-    "━━━━━━━━━━━━━━━━━━━━\n"
-)
-
+            "**🎯 Panneau d'Alerte DEF**\n\n"
+            "Bienvenue sur le Panneau d'Alerte Défense ! Cliquez sur le bouton de votre guilde ci-dessous pour envoyer une alerte à votre équipe. "
+            "💡 **Comment l'utiliser :**\n"
+            "1️⃣ Cliquez sur le bouton de votre guilde.\n"
+            "2️⃣ Vérifiez le canal d'alerte pour les mises à jour.\n"
+            "3️⃣ Ajoutez des notes aux alertes si nécessaire.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+        )
 
         async for message in channel.history(limit=50):
             if message.pinned:
