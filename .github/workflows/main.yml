@@ -5,7 +5,7 @@ on:
     branches:
       - main  # Adjust to your target branch
   schedule:
-    - cron: '0 */5 * * *'  # Triggers every 5 hours
+    - cron: '*/5 * * * *'  # Triggers every 5 minutes
   workflow_dispatch:
 
 jobs:
@@ -13,33 +13,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Step 2: Install FFmpeg (Optional)
       - name: Install FFmpeg (Optional)
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
+      # Step 3: Install PortAudio
       - name: Install PortAudio
         run: |
           sudo apt-get update
           sudo apt-get install -y portaudio19-dev
 
+      # Step 4: Install Tesseract OCR with French language
       - name: Install Tesseract OCR with French language
         run: |
           sudo apt-get update
           sudo apt-get install -y tesseract-ocr tesseract-ocr-fra
 
+      # Step 5: Set up Tesseract environment variable
       - name: Set up Tesseract environment variable
         run: |
           export TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/
 
+      # Step 6: Set up Python environment
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
+      # Step 7: Cache pip dependencies (Optional)
       - name: Cache pip dependencies (Optional)
         uses: actions/cache@v3
         with:
@@ -48,12 +55,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      # Step 8: Install dependencies
       - name: Install dependencies
         run: |
           python -m venv venv
           source venv/bin/activate
           pip install -r requirements.txt
 
+      # Step 9: Run the bot
       - name: Run the bot
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -61,13 +70,14 @@ jobs:
           source venv/bin/activate
           python main.py
 
-      - name: Commit conversation history
+      # Step 10: Save data to repository
+      - name: Commit database file
         if: success()
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          if [ -f conversation_history.json ]; then
-            git add conversation_history.json
-            git commit -m "Update conversation history"
+          if [ -f data.db ]; then
+            git add data.db
+            git commit -m "Save database changes"
             git push
           fi
