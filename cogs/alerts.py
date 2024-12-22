@@ -10,7 +10,7 @@ class Alerts(commands.Cog):
         self.bot = bot
         self.allowed_channel_id = 1300093554399645715  # Replace with your specific channel ID
 
-    @app_commands.command(name="alert", description="Générer un rapport des notifications envoyées dans ce canal au cours des 7 derniers jours.")
+    @app_commands.command(name="alert", description="Generate a report of notifications sent in this channel for the last 7 days.")
     async def alert(self, interaction: discord.Interaction):
         # Ensure the command is only used in the specified channel
         if interaction.channel_id != self.allowed_channel_id:
@@ -30,6 +30,8 @@ class Alerts(commands.Cog):
 
         # Collect notification data
         notification_data = {}
+        role_summary = {}  # To track how many times each role was tagged
+
         for message in messages:
             author = message.author
             timestamp = message.created_at.strftime("%Y-%m-%d %H:%M:%S")
@@ -40,6 +42,12 @@ class Alerts(commands.Cog):
             outcome_match = re.search(r"Outcome:\s*(Win|Loss)", message.content, re.IGNORECASE)
             attacker = attacker_match.group(1) if attacker_match else "Unknown"
             outcome = outcome_match.group(1) if outcome_match else "Not Specified"
+
+            # Update role summary
+            for role in roles_tagged:
+                if role not in role_summary:
+                    role_summary[role] = 0
+                role_summary[role] += 1
 
             # Initialize data for the author if not already done
             if author.id not in notification_data:
@@ -70,6 +78,11 @@ class Alerts(commands.Cog):
                         report_file.write(f"    Roles Tagged: {', '.join(notification['roles_tagged']) if notification['roles_tagged'] else 'None'}\n")
                         report_file.write(f"    Attacker: {notification['attacker']}\n")
                         report_file.write(f"    Outcome: {notification['outcome']}\n\n")
+
+                # Add role summary to the report
+                report_file.write("\nSummary of Role Mentions:\n")
+                for role, count in role_summary.items():
+                    report_file.write(f"  - {role}: {count} times\n")
 
         # Notify the user and attach the file
         await interaction.response.send_message("Report generated:", file=discord.File(report_filename), ephemeral=True)
