@@ -5,6 +5,10 @@ import asyncio
 import logging
 import sqlite3
 import sys
+from database import initialize_database
+
+
+initialize_database()
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
