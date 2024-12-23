@@ -120,11 +120,14 @@ async def forward_dm(message: discord.Message):
     if owner:
         await owner.send(f"📩 DM from {message.author} ({message.author.id}): {message.content}")
 
-# Command to display memory
 @bot.command(name='memory')
 async def memory_command(ctx):
     memory_content = read_memory_file()
-    await ctx.send(f"Memory:
+    if memory_content:
+        await ctx.send(f"Memory:\n```\n{memory_content}\n```")
+    else:
+        await ctx.send("Could not read memory.")
+
 ```
 {memory_content}
 ```" if memory_content else "Memory is blank!")
