@@ -1,22 +1,23 @@
 import discord
 from discord.ext import commands
 import re
+import asyncio
 
 class LinkFilter(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.allowed_server_id = 1217700740949348443
-        self.approvers = {422092705602994186, 486652069831376943}
+        self.allowed_server_id = 1217700740949348443  # Replace with your server ID
+        self.approvers = {422092705602994186, 486652069831376943}  # Replace with approver IDs
         self.pending_links = {}  # Store user ID and content temporarily
 
     @commands.Cog.listener()
     async def on_message(self, message):
         # Ignore bot messages or messages not in the specified server
-        if message.author.bot or message.guild.id != self.allowed_server_id:
+        if message.author.bot or not message.guild or message.guild.id != self.allowed_server_id:
             return
 
         # Check if the message contains a link
-        url_pattern = re.compile(r"https?://\\S+")
+        url_pattern = re.compile(r"https?://\S+")
         if url_pattern.search(message.content):
             # Hide the message
             await message.delete()
@@ -52,6 +53,7 @@ class LinkFilter(commands.Cog):
                 )
 
             try:
+                # Wait for a reaction from an approver
                 reaction, user = await self.bot.wait_for('reaction_add', timeout=3600.0, check=check)
 
                 if str(reaction.emoji) == '✅':
@@ -65,7 +67,7 @@ class LinkFilter(commands.Cog):
                         f"The link shared by {message.author.mention} was denied by {user.mention}."
                     )
 
-            except TimeoutError:
+            except asyncio.TimeoutError:
                 # Inform if no action is taken within 1 hour
                 await message.channel.send(
                     f"The link shared by {message.author.mention} was not reviewed in time and remains denied."
