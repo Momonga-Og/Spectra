@@ -64,11 +64,9 @@ async def sync_commands():
             logger.exception("Failed to sync commands")
 
 status_messages = [
-    "Serving with a smile!",
-    "Thinking about life...",
-    "Making new friends!",
-    "Waiting for commands!",
-    "Contemplating the universe."
+    "غا الغبرة والشراب و تفاح و البنان و الخس كي القنية,
+    "وترري ترري مع بنة تمارة أويلي بغيت ليك الدل,
+    "غانكولها ليك بطالينية توبا موروزا نونا اموريا",
 ]
 
 @tasks.loop(minutes=10)
