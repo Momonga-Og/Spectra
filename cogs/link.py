@@ -48,7 +48,8 @@ class LinkFilter(commands.Cog):
                 if interaction.user.id in self.approvers:
                     await interaction.response.send_message(
                         f"Approved by {interaction.user.mention}:
-                        {message.author.mention}: {self.pending_links[message.id]['content']}",
+"
+                        f"{message.author.mention}: {self.pending_links[message.id]['content']}",
                         ephemeral=False
                     )
                     self.pending_links.pop(message.id, None)
