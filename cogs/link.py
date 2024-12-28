@@ -64,7 +64,7 @@ class LinkFilter(commands.Cog):
 
             # Repost the approved message
             await interaction.response.send_message(
-                f"Approved by {interaction.user.mention}:
+                f"Approved by {interaction.user.mention}:"
 {pending_data['author'].mention}: {pending_data['content']}",
                 ephemeral=False
             )
