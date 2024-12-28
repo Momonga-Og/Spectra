@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 import re
 import asyncio
 
@@ -8,7 +9,7 @@ class LinkFilter(commands.Cog):
         self.bot = bot
         self.allowed_server_id = 1217700740949348443  # Replace with your server ID
         self.approvers = {422092705602994186, 486652069831376943}  # Replace with approver IDs
-        self.pending_links = {}  # Store user ID and content temporarily
+        self.pending_links = {}  # Store pending links by message ID
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -24,59 +25,79 @@ class LinkFilter(commands.Cog):
 
             # Notify the user
             await message.channel.send(
-                f"{message.author.mention}, links are not allowed without approval. "
-                "Your link is pending approval by the designated approvers."
+                f"{message.author.mention}, links are not allowed without approval. Your link is pending approval."
             )
 
-            # Store the original message for approvers
+            # Store the original message content
             self.pending_links[message.id] = {
                 "author": message.author,
                 "content": message.content,
             }
 
-            # Notify approvers with hidden details
+            # Notify approvers privately
             approval_message = await message.channel.send(
-                f"A link has been shared by {message.author.mention}. Approvers, please respond below."
+                f"A link has been shared by {message.author.mention}. Approvers, please review:",
+                view=self.ApprovalView(self, message.id)
             )
 
-            # Add approval buttons (green and red)
-            view = discord.ui.View()
-            approve_button = discord.ui.Button(style=discord.ButtonStyle.success, label="Approve")
-            deny_button = discord.ui.Button(style=discord.ButtonStyle.danger, label="Deny")
+    class ApprovalView(discord.ui.View):
+        def __init__(self, cog, message_id):
+            super().__init__(timeout=3600)  # 1-hour timeout
+            self.cog = cog
+            self.message_id = message_id
 
-            async def approve_callback(interaction: discord.Interaction):
-                if interaction.user.id in self.approvers:
-                    await interaction.response.send_message(
-                        f"Approved by {interaction.user.mention}:
-"
-                        f"{message.author.mention}: {self.pending_links[message.id]['content']}",
-                        ephemeral=False
-                    )
-                    self.pending_links.pop(message.id, None)
-                    view.stop()
-                else:
-                    await interaction.response.send_message(
-                        "You do not have permission to approve links.", ephemeral=True
-                    )
+        @discord.ui.button(label="Approve", style=discord.ButtonStyle.success)
+        async def approve(self, interaction: discord.Interaction, button: discord.ui.Button):
+            # Ensure the approver has permissions
+            if interaction.user.id not in self.cog.approvers:
+                await interaction.response.send_message(
+                    "You are not authorized to approve links.", ephemeral=True
+                )
+                return
 
-            async def deny_callback(interaction: discord.Interaction):
-                if interaction.user.id in self.approvers:
-                    await interaction.response.send_message(
-                        f"The link shared by {message.author.mention} was denied.", ephemeral=False
-                    )
-                    self.pending_links.pop(message.id, None)
-                    view.stop()
-                else:
-                    await interaction.response.send_message(
-                        "You do not have permission to deny links.", ephemeral=True
-                    )
+            pending_data = self.cog.pending_links.get(self.message_id)
+            if not pending_data:
+                await interaction.response.send_message(
+                    "This link is no longer pending approval.", ephemeral=True
+                )
+                return
 
-            approve_button.callback = approve_callback
-            deny_button.callback = deny_callback
-            view.add_item(approve_button)
-            view.add_item(deny_button)
+            # Repost the approved message
+            await interaction.response.send_message(
+                f"Approved by {interaction.user.mention}:
+{pending_data['author'].mention}: {pending_data['content']}",
+                ephemeral=False
+            )
 
-            await approval_message.edit(view=view)
+            # Clean up pending data
+            self.cog.pending_links.pop(self.message_id, None)
+            self.stop()
+
+        @discord.ui.button(label="Deny", style=discord.ButtonStyle.danger)
+        async def deny(self, interaction: discord.Interaction, button: discord.ui.Button):
+            # Ensure the denier has permissions
+            if interaction.user.id not in self.cog.approvers:
+                await interaction.response.send_message(
+                    "You are not authorized to deny links.", ephemeral=True
+                )
+                return
+
+            pending_data = self.cog.pending_links.get(self.message_id)
+            if not pending_data:
+                await interaction.response.send_message(
+                    "This link is no longer pending approval.", ephemeral=True
+                )
+                return
+
+            # Notify the denial
+            await interaction.response.send_message(
+                f"The link shared by {pending_data['author'].mention} was denied by {interaction.user.mention}.",
+                ephemeral=False
+            )
+
+            # Clean up pending data
+            self.cog.pending_links.pop(self.message_id, None)
+            self.stop()
 
 async def setup(bot):
     await bot.add_cog(LinkFilter(bot))
