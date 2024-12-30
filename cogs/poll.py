@@ -30,11 +30,20 @@ class Poll(commands.Cog):
     @app_commands.command(name="pm", description="Send a private message")
     async def pm(self, interaction: discord.Interaction, member: discord.Member, message: str):
         try:
+            # Check if the bot can send a DM to the member
+            if member.dm_channel is None:
+                await member.create_dm()
+            
             await member.send(message)
-            await interaction.response.send_message(f'PM sent to {member.display_name}.')
+            await interaction.response.send_message(f'PM sent to {member.display_name}.', ephemeral=True)
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                f"Unable to send a DM to {member.display_name}. They may have DMs disabled or blocked the bot.",
+                ephemeral=True
+            )
         except Exception as e:
             logging.exception("Error in pm command")
-            await interaction.response.send_message("An error occurred while processing your command.")
+            await interaction.response.send_message("An error occurred while processing your command.", ephemeral=True)
 
 async def setup(bot):
     cog = Poll(bot)
