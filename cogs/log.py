@@ -87,5 +87,6 @@ class LogCog(commands.Cog):
                 formatted_entry = self.format_audit_log_entry(entry)
                 await user.send(f"Audit log entry created:\n{formatted_entry}")
 
-def setup(bot):
-    bot.add_cog(LogCog(bot))
+async def setup(bot):
+    await bot.add_cog(LogCog(bot))
+
