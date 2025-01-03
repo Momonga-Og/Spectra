@@ -122,7 +122,7 @@ async def on_error(event: str, *args, **kwargs):
     logger.exception(f"An error occurred in event {event}")
 
 EXTENSIONS = [
-    'cogs.general', 'cogs.moderation', 'cogs.poll', 'cogs.admin', 'cogs.gtoguild', 'cogs.save', 'cogs.key', 'cogs.link',
+    'cogs.general', 'cogs.moderation', 'cogs.poll', 'cogs.admin', 'cogs.gtoguild', 'cogs.save', 'cogs.key', 'cogs.link', 'cogs.log',
     'cogs.relocate', 'cogs.watermark', 'cogs.serverstats', 'cogs.talk', 'cogs.write', 'cogs.alerts',
     'cogs.watermark_user', 'cogs.attack', 'cogs.role', 'cogs.metiers', 'cogs.percopos',
     'cogs.youtube_mp3', 'cogs.image_converter', 'cogs.clear', 'cogs.startguild', 'cogs.percoattack', 'cogs.sure',
