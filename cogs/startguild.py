@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord.ui import View, Button, Select, Modal, TextInput
+from discord.ui import View, Button, Modal, TextInput
 import random
 
 # Configuration
@@ -66,16 +66,24 @@ class AlertActionView(View):
         self.is_locked = False
 
         self.add_note_button = Button(
-            label="", style=discord.ButtonStyle.secondary, emoji="📝"
+            label="Ajouter une note",
+            style=discord.ButtonStyle.secondary,
+            emoji="📝"
         )
         self.add_note_button.callback = self.add_note_callback
         self.add_item(self.add_note_button)
 
-        self.won_button = Button(label="", style=discord.ButtonStyle.success, emoji="✅")
+        self.won_button = Button(
+            label="Won",
+            style=discord.ButtonStyle.success,
+        )
         self.won_button.callback = self.mark_as_won
         self.add_item(self.won_button)
 
-        self.lost_button = Button(label="", style=discord.ButtonStyle.danger, emoji="❌")
+        self.lost_button = Button(
+            label="Lost",
+            style=discord.ButtonStyle.danger,
+        )
         self.lost_button.callback = self.mark_as_lost
         self.add_item(self.lost_button)
 
@@ -115,63 +123,56 @@ class GuildPingView(View):
     def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
         self.bot = bot
-
-        options = [
-            discord.SelectOption(
-                label=guild_name,
-                description=f"Envoyer une alerte pour {guild_name}",
-                emoji=data["emoji"]
+        for guild_name, data in GUILD_EMOJIS_ROLES.items():
+            button = Button(
+                label=f"  {guild_name.upper()}  ",
+                emoji=data["emoji"],
+                style=discord.ButtonStyle.primary
             )
-            for guild_name, data in GUILD_EMOJIS_ROLES.items()
-        ]
+            button.callback = self.create_ping_callback(guild_name, data["role_id"])
+            self.add_item(button)
 
-        self.select_menu = Select(placeholder="Choisissez une guilde", options=options)
-        self.select_menu.callback = self.select_callback
-        self.add_item(self.select_menu)
+    def create_ping_callback(self, guild_name, role_id):
+        async def callback(interaction: discord.Interaction):
+            try:
+                if interaction.guild_id != GUILD_ID:
+                    await interaction.response.send_message(
+                        "Cette fonction n'est pas disponible sur ce serveur.", ephemeral=True
+                    )
+                    return
 
-    async def select_callback(self, interaction: discord.Interaction):
-        selected_guild = self.select_menu.values[0]
-        role_id = GUILD_EMOJIS_ROLES[selected_guild]["role_id"]
-        await self.send_alert(interaction, selected_guild, role_id)
+                alert_channel = interaction.guild.get_channel(ALERTE_DEF_CHANNEL_ID)
+                if not alert_channel:
+                    await interaction.response.send_message("Canal d'alerte introuvable !", ephemeral=True)
+                    return
 
-    async def send_alert(self, interaction: discord.Interaction, guild_name: str, role_id: int):
-        try:
-            if interaction.guild_id != GUILD_ID:
-                await interaction.response.send_message(
-                    "Cette fonction n'est pas disponible sur ce serveur.", ephemeral=True
+                role = interaction.guild.get_role(role_id)
+                if not role:
+                    await interaction.response.send_message(f"Rôle pour {guild_name} introuvable !", ephemeral=True)
+                    return
+
+                alert_message = random.choice(ALERT_MESSAGES).format(role=role.mention)
+                embed = discord.Embed(
+                    title="🔔 Alerte envoyée !",
+                    description=f"**{interaction.user.mention}** a déclenché une alerte pour **{guild_name}**.",
+                    color=discord.Color.red()
                 )
-                return
+                embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
+                embed.add_field(name="📝 Notes", value="Aucune note.", inline=False)
 
-            alert_channel = interaction.guild.get_channel(ALERTE_DEF_CHANNEL_ID)
-            if not alert_channel:
-                await interaction.response.send_message("Canal d'alerte introuvable !", ephemeral=True)
-                return
+                sent_message = await alert_channel.send(content=alert_message, embed=embed)
+                view = AlertActionView(self.bot, sent_message)
+                await sent_message.edit(view=view)
 
-            role = interaction.guild.get_role(role_id)
-            if not role:
-                await interaction.response.send_message(f"Rôle pour {guild_name} introuvable !", ephemeral=True)
-                return
+                await interaction.response.send_message(
+                    f"Alerte envoyée à {guild_name} dans le canal d'alerte !", ephemeral=True
+                )
 
-            alert_message = random.choice(ALERT_MESSAGES).format(role=role.mention)
-            embed = discord.Embed(
-                title="🔔 Alerte envoyée !",
-                description=f"**{interaction.user.mention}** a déclenché une alerte pour **{guild_name}**.",
-                color=discord.Color.red()
-            )
-            embed.set_thumbnail(url=interaction.user.avatar.url if interaction.user.avatar else interaction.user.default_avatar.url)
-            embed.add_field(name="📝 Notes", value="Aucune note.", inline=False)
+            except Exception as e:
+                print(f"Error in ping callback for {guild_name}: {e}")
+                await interaction.response.send_message("Une erreur est survenue.", ephemeral=True)
 
-            sent_message = await alert_channel.send(content=alert_message, embed=embed)
-            view = AlertActionView(self.bot, sent_message)
-            await sent_message.edit(view=view)
-
-            await interaction.response.send_message(
-                f"Alerte envoyée à {guild_name} dans le canal d'alerte !", ephemeral=True
-            )
-
-        except Exception as e:
-            print(f"Error in ping callback for {guild_name}: {e}")
-            await interaction.response.send_message("Une erreur est survenue.", ephemeral=True)
+        return callback
 
 
 class StartGuildCog(commands.Cog):
@@ -191,15 +192,17 @@ class StartGuildCog(commands.Cog):
 
         view = GuildPingView(self.bot)
         message_content = (
-            "**🎯 Panneau d'Alerte DEF**\n\n"
-            "Bienvenue sur le Panneau d'Alerte Défense ! Utilisez le menu déroulant ci-dessous pour sélectionner votre guilde et envoyer une alerte.\n\n"
-            "💡 **Comment l'utiliser :**\n"
-            "1️⃣ Sélectionnez une guilde dans le menu déroulant.\n"
-            "2️⃣ Vérifiez le canal d'alerte pour les mises à jour.\n"
-            "3️⃣ Ajoutez des notes aux alertes si nécessaire.\n\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "⬇️ **Guildes Disponibles** ⬇️\n"
-        )
+    "**🎯 Panneau d'Alerte DEF**\n\n"
+    "Bienvenue sur le Panneau d'Alerte Défense ! Cliquez sur le bouton de votre guilde ci-dessous pour envoyer une alerte à votre équipe. "
+    "Chaque bouton correspond à une guilde, et le fait d'appuyer dessus notifiera tous les membres associés à cette guilde.\n\n"
+    "💡 **Comment l'utiliser :**\n"
+    "1️⃣ Cliquez sur le bouton de votre guilde.\n"
+    "2️⃣ Vérifiez le canal d'alerte pour les mises à jour.\n"
+    "3️⃣ Ajoutez des notes aux alertes si nécessaire.\n\n"
+    "━━━━━━━━━━━━━━━━━━━━\n"
+    "⬇️ **Guildes Disponibles** ⬇️\n"
+)
+
 
         async for message in channel.history(limit=50):
             if message.pinned:
