@@ -28,3 +28,4 @@ License
 Released under the MIT License.
 
 Spectra is named in honor of its multifaceted features that aim to reflect the diverse needs of Discord communities worldwide.
+"# spectra" 
